@@ -20,7 +20,7 @@ function App() {
         return {
           nomes: parsed.nomes || [''],
           telefone: parsed.telefone || '',
-          consultor: parsed.consultor || 'Guilherme V Santos',
+          consultor: parsed.consultor || 'Guilherme Vieira Santos',
           cargo: parsed.cargo || 'Gestor de Milhas',
           origem: parsed.origem || '',
           destino: parsed.destino || '',
@@ -298,7 +298,7 @@ function App() {
               <img src={LOGO_URL} alt="GVS" className="prev-logo" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
               <div style={{ display: 'none' }} className="prev-logo-placeholder">GVS</div>
               <div className="prev-header-info">
-                <div className="prev-titulo-viagem">{tituloViagem || 'Itinerário de Viagem'}</div>
+                <div className="prev-titulo-viagem">{tituloViagem || 'Itinerário de Viagens'}</div>
                 <div className="prev-consultor">
                   Consultor: <span>{form.consultor || '—'}</span>
                 </div>
