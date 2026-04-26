@@ -39,7 +39,7 @@ function App() {
     return {
       nomes: [''],
       telefone: '',
-      consultor: 'Guilherme V Santos',
+      consultor: 'Guilherme Vieira Santos',
       cargo: 'Gestor de Milhas',
       origem: '',
       destino: '',
@@ -139,7 +139,7 @@ function App() {
       const novo = {
         nomes: [''],
         telefone: '',
-        consultor: 'Guilherme V Santos',
+        consultor: 'Guilherme Vieira Santos',
         cargo: 'Gestor de Milhas',
         origem: '',
         destino: '',
