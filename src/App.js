@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import TrechoForm from './components/TrechoForm';
 import HospedagemForm from './components/HospedagemForm';
 import IngressoForm from './components/IngressoForm';
 import PreviewTrecho from './components/PreviewTrecho';
 import PreviewIngresso from './components/PreviewIngresso';
+import PreviewHospedagem from './components/PreviewHospedagem';
+import Toast from './components/Toast';
 import { 
-  novoTrecho, novaHosp, novoIngresso, fmtDate, 
-  LOGO_URL, limparLocalStorageCorrompido, calcularDuracaoVoo
+  novoTrecho, novaHosp, novoIngresso, fmtDate, fmtDateTime,
+  LOGO_URL, limparLocalStorageCorrompido, calcularDuracaoVoo,
+  calcularDuracaoViagem, validarCodigoAeroporto, validarDatas,
+  mascaraTelefone, notasGlobais
 } from './utils/helpers';
 import './styles/App.css';
 
@@ -30,7 +34,11 @@ function App() {
           tipos: parsed.tipos || ['Aéreos'],
           trechos: parsed.trechos && parsed.trechos.length ? parsed.trechos : [novoTrecho('IDA')],
           hospedagens: parsed.hospedagens || [],
-          ingressos: parsed.ingressos || []
+          ingressos: parsed.ingressos || [],
+          notasGerais: parsed.notasGerais || notasGlobais,
+          imagemDestino: parsed.imagemDestino || '',
+          logoPersonalizado: parsed.logoPersonalizado || '',
+          tema: parsed.tema || 'light'
         };
       }
     } catch (e) {
@@ -49,34 +57,125 @@ function App() {
       tipos: ['Aéreos'],
       trechos: [novoTrecho('IDA')],
       hospedagens: [],
-      ingressos: []
+      ingressos: [],
+      notasGerais: notasGlobais,
+      imagemDestino: '',
+      logoPersonalizado: '',
+      tema: 'light'
     };
   });
 
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [modoEscuro, setModoEscuro] = useState(false);
   const previewRef = useRef(null);
+  const formRef = useRef(null);
 
   // Auto-save
   useEffect(() => {
     localStorage.setItem('gvs_itinerario', JSON.stringify(form));
   }, [form]);
 
+  // Aplicar tema
+  useEffect(() => {
+    if (modoEscuro) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [modoEscuro]);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const u = (field, val) => setForm(f => ({ ...f, [field]: val }));
+
+  // Validações
+  const validarFormulario = () => {
+    // Validar datas
+    if (!validarDatas(form.dataIda, form.dataVolta)) {
+      showToast('A data de ida não pode ser posterior à data de volta!', 'error');
+      return false;
+    }
+
+    // Validar códigos de aeroporto nos trechos
+    for (const trecho of form.trechos) {
+      if (trecho.origemCod && !validarCodigoAeroporto(trecho.origemCod)) {
+        showToast(`Código de aeroporto inválido: ${trecho.origemCod} (deve ter 3 letras)`, 'error');
+        return false;
+      }
+      if (trecho.destinoCod && !validarCodigoAeroporto(trecho.destinoCod)) {
+        showToast(`Código de aeroporto inválido: ${trecho.destinoCod} (deve ter 3 letras)`, 'error');
+        return false;
+      }
+    }
+
+    // Validar campos obrigatórios se houver trechos
+    if (form.trechos.length > 0 && form.trechos[0].cia) {
+      for (const trecho of form.trechos) {
+        if (trecho.cia && (!trecho.origemCod || !trecho.destinoCod)) {
+          showToast('Preencha origem e destino para todos os trechos com companhia selecionada', 'warning');
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
 
   // Trechos
   const addTrecho = (tipo) => u('trechos', [...form.trechos, novoTrecho(tipo)]);
   const updTrecho = (id, data) => u('trechos', form.trechos.map(t => t.id === id ? data : t));
   const remTrecho = (id) => u('trechos', form.trechos.filter(t => t.id !== id));
+  const duplicateTrecho = (trecho) => {
+    const novoT = { ...trecho, id: Math.random().toString(36).substr(2, 9) };
+    u('trechos', [...form.trechos, novoT]);
+    showToast('Trecho duplicado com sucesso!');
+  };
+
+  // Ordenar trechos por data
+  const ordenarTrechosPorData = () => {
+    const trechosOrdenados = [...form.trechos].sort((a, b) => {
+      if (!a.data) return 1;
+      if (!b.data) return -1;
+      return new Date(a.data) - new Date(b.data);
+    });
+    u('trechos', trechosOrdenados);
+    showToast('Trechos ordenados por data!');
+  };
 
   // Hospedagens
   const addHosp = () => u('hospedagens', [...form.hospedagens, novaHosp()]);
   const updHosp = (id, data) => u('hospedagens', form.hospedagens.map(h => h.id === id ? data : h));
   const remHosp = (id) => u('hospedagens', form.hospedagens.filter(h => h.id !== id));
+  const duplicateHosp = (hosp) => {
+    const novaH = { ...hosp, id: Math.random().toString(36).substr(2, 9) };
+    u('hospedagens', [...form.hospedagens, novaH]);
+    showToast('Hospedagem duplicada com sucesso!');
+  };
+
+  // Ordenar hospedagens por check-in
+  const ordenarHospedagensPorData = () => {
+    const hospOrdenadas = [...form.hospedagens].sort((a, b) => {
+      if (!a.inicio) return 1;
+      if (!b.inicio) return -1;
+      return new Date(a.inicio) - new Date(b.inicio);
+    });
+    u('hospedagens', hospOrdenadas);
+    showToast('Hospedagens ordenadas por check-in!');
+  };
 
   // Ingressos
   const addIngresso = () => u('ingressos', [...form.ingressos, novoIngresso()]);
   const updIngresso = (id, data) => u('ingressos', form.ingressos.map(i => i.id === id ? data : i));
   const remIngresso = (id) => u('ingressos', form.ingressos.filter(i => i.id !== id));
+  const duplicateIngresso = (ingresso) => {
+    const novoI = { ...ingresso, id: Math.random().toString(36).substr(2, 9) };
+    u('ingressos', [...form.ingressos, novoI]);
+    showToast('Ingresso duplicado com sucesso!');
+  };
 
   // Nomes
   const updNome = (i, v) => {
@@ -93,42 +192,124 @@ function App() {
     u('tipos', curr.includes(t) ? curr.filter(x => x !== t) : [...curr, t]);
   };
 
+  // Notas gerais
+  const updateNotaGlobal = (key, value) => {
+    u('notasGerais', { ...form.notasGerais, [key]: value });
+  };
+
   // Gerar PDF
   const gerarPDF = async () => {
+    if (!validarFormulario()) return;
+    
     setSaving(true);
+    showToast('Gerando PDF...', 'info');
+    
     const el = previewRef.current;
     const nomeArq = (form.nomes[0] || 'cliente').toLowerCase().replace(/\s+/g, '_');
     const opt = {
-      margin: 0,
-      filename: `itinerario_${nomeArq}.pdf`,
-      image: { type: 'jpeg', quality: 0.97 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
+      margin: [10, 10, 10, 10],
+      filename: `itinerario_${nomeArq}_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
+    
     try {
       await window.html2pdf().set(opt).from(el).save();
+      showToast('PDF gerado com sucesso!', 'success');
     } catch (e) {
-      window.alert('Erro ao gerar PDF: ' + e.message);
+      showToast('Erro ao gerar PDF: ' + e.message, 'error');
     }
     setSaving(false);
   };
 
-  // WhatsApp
+  // Copiar resumo
+  const copiarResumo = () => {
+    const resumo = gerarResumoTexto();
+    navigator.clipboard.writeText(resumo);
+    showToast('Resumo copiado para área de transferência!', 'success');
+  };
+
+  // Gerar resumo em texto
+  const gerarResumoTexto = () => {
+    const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
+    const totalVoos = form.trechos.length;
+    const totalHospedagens = form.hospedagens.length;
+    const totalIngressos = form.ingressos.length;
+    
+    return `✈️ RESUMO DA VIAGEM - GVS
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 Destino: ${form.destino || 'Não informado'}
+📅 Período: ${fmtDate(form.dataIda) || '—'} a ${fmtDate(form.dataVolta) || '—'}
+⏱ Duração: ${totalDias} dias
+
+📊 ESTATÍSTICAS:
+• ${totalVoos} voo(s)
+• ${totalHospedagens} hospedagem(ns)
+• ${totalIngressos} ingresso(s)/passeio(s)
+
+👤 Passageiro(s): ${form.nomes.filter(Boolean).join(', ')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+Emitido por: ${form.consultor}
+Data: ${new Date().toLocaleDateString('pt-BR')}`;
+  };
+
+  // WhatsApp melhorado
   const exportarWhatsApp = () => {
     const nomes = form.nomes.filter(Boolean).join(', ');
+    
     const trechos = form.trechos.map(t => {
       const duracao = calcularDuracaoVoo(t.horaSaida, t.horaChegada);
-      return `*${t.tipo}* ${t.origemCod}→${t.destinoCod} | ${fmtDate(t.data)} | ${t.horaSaida}→${t.horaChegada} (${duracao}) | ${t.cia} ${t.numVoo}` +
-      ((t.localizadores || []).filter(l => l.code).length ? `\nLocalizador: ${(t.localizadores || []).filter(l => l.code).map(l => l.code).join(' e ')}` : '');
+      return `✈️ *${t.tipo}*: ${t.origemCod || '???'} → ${t.destinoCod || '???'}
+   📅 ${fmtDate(t.data)} • ${t.horaSaida || '--:--'} → ${t.horaChegada || '--:--'} (${duracao})
+   🏢 ${t.cia} ${t.numVoo}`;
     }).join('\n\n');
-    const hosps = form.hospedagens.map(h =>
-      `🏨 ${h.hotel} | ${fmtDate(h.inicio)} → ${fmtDate(h.fim)}${h.codigo ? ` | Cód: ${h.codigo}` : ''}`
-    ).join('\n');
+    
+    const hosps = form.hospedagens.map(h => {
+      let texto = `🏨 *${h.hotel || 'Hotel'}*
+   📅 Check-in: ${fmtDate(h.inicio)}${h.checkinHorario ? ` às ${h.checkinHorario}` : ''}
+   📅 Check-out: ${fmtDate(h.fim)}${h.checkoutHorario ? ` às ${h.checkoutHorario}` : ''}`;
+      
+      if (h.endereco) texto += `\n   📍 ${h.endereco}, ${h.numero} - ${h.cidade}`;
+      if (h.cafeIncluso) texto += `\n   ☕ Café da manhã incluso${h.tipoCafe ? ` (${h.tipoCafe})` : ''}`;
+      if (h.quartoNumero || h.tipoQuarto) texto += `\n   🛏 Quarto: ${h.quartoNumero ? `nº ${h.quartoNumero}` : ''} ${h.tipoQuarto || ''}`;
+      if (h.contatoHotel) texto += `\n   📞 ${h.contatoHotel}`;
+      
+      return texto;
+    }).join('\n\n');
+    
     const ingressos = form.ingressos.map(i =>
-      `🎟️ ${i.nome} | ${fmtDate(i.data)} ${i.horario} | ${i.quantidade} ingresso(s)${i.codigo ? ` | Cód: ${i.codigo}` : ''}`
+      `🎟️ *${i.nome}* • ${fmtDate(i.data)} ${i.horario} • ${i.quantidade} ingresso(s)`
     ).join('\n');
-    const msg = `✈️ *ITINERÁRIO GVS*\n*${form.destino || 'Destino'}* | ${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)}\n\n👤 *Passageiro(s):* ${nomes}\n\n${trechos}${hosps ? '\n\n🏨 HOSPEDAGEM:\n' + hosps : ''}${ingressos ? '\n\n🎟️ INGRESSOS/PASSEIOS:\n' + ingressos : ''}\n\n_Consultor: ${form.consultor}_`;
+    
+    const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
+    
+    const msg = `✈️ *ITINERÁRIO GVS - ${form.destino || 'Destino'}* ✈️
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📅 *Período:* ${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)} (${totalDias} dias)
+👤 *Passageiro(s):* ${nomes}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+*✈️ VOOS*
+${trechos}
+
+${hosps ? `━━━━━━━━━━━━━━━━━━━━━━━━━
+*🏨 HOSPEDAGEM*
+${hosps}` : ''}
+
+${ingressos ? `━━━━━━━━━━━━━━━━━━━━━━━━━
+*🎟️ INGRESSOS/PASSEIOS*
+${ingressos}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+*Consultor:* ${form.consultor}
+*Emissão:* ${new Date().toLocaleDateString('pt-BR')}`;
+    
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    showToast('Mensagem preparada para WhatsApp!', 'success');
   };
 
   // Limpar tudo
@@ -149,32 +330,56 @@ function App() {
         tipos: ['Aéreos'],
         trechos: [novoTrecho('IDA')],
         hospedagens: [],
-        ingressos: []
+        ingressos: [],
+        notasGerais: notasGlobais,
+        imagemDestino: '',
+        logoPersonalizado: '',
+        tema: 'light'
       };
       setForm(novo);
       localStorage.setItem('gvs_itinerario', JSON.stringify(novo));
+      showToast('Dados limpos com sucesso!', 'success');
     }
   };
+
+  // Métricas para resumo
+  const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
+  const totalVoos = form.trechos.length;
+  const totalHospedagens = form.hospedagens.length;
+  const totalIngressos = form.ingressos.length;
 
   const tituloViagem = [form.destino, form.dataIda && form.dataVolta ? `${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)}` : ''].filter(Boolean).join(' • ');
   const trechoIda = form.trechos.filter(t => t.tipo === 'IDA');
   const trechoVolta = form.trechos.filter(t => t.tipo === 'VOLTA');
 
   return (
-    <div>
+    <div className={`app ${modoEscuro ? 'dark-theme' : 'light-theme'}`}>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      
       {/* TOPO */}
       <div className="top-header">
-        <img src={LOGO_URL} alt="GVS Logo" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+        {form.logoPersonalizado ? (
+          <img src={form.logoPersonalizado} alt="Logo Personalizado" className="header-logo" />
+        ) : (
+          <img src={LOGO_URL} alt="GVS Logo" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+        )}
         <div style={{ display: 'none' }} className="logo-placeholder">GVS</div>
         <div className="header-title">
           <h1>Gerador de Itinerário</h1>
           <p>Guilherme Vieira Santos • Gestor de Milhas</p>
         </div>
+        <button 
+          className="theme-toggle" 
+          onClick={() => setModoEscuro(!modoEscuro)}
+          title={modoEscuro ? 'Modo claro' : 'Modo escuro'}
+        >
+          {modoEscuro ? '☀️' : '🌙'}
+        </button>
       </div>
 
       <div className="app-layout">
         {/* ===== PAINEL ESQUERDO: FORMULÁRIO ===== */}
-        <div className="form-panel">
+        <div className="form-panel" ref={formRef}>
 
           {/* DADOS DO CLIENTE */}
           <div className="section-label">Dados do Cliente</div>
@@ -190,6 +395,7 @@ function App() {
               <input value={form.cargo} onChange={e => u('cargo', e.target.value)} />
             </div>
           </div>
+          
           <div className="section-label" style={{ fontSize: 9, margin: '12px 0 8px' }}>Passageiros</div>
           <div className="passengers-list">
             {form.nomes.map((n, i) => (
@@ -200,10 +406,15 @@ function App() {
             ))}
           </div>
           <button className="btn-loc-add" onClick={addNome} style={{ marginTop: 6 }}>+ Adicionar Passageiro</button>
+          
           <div className="field-group" style={{ marginTop: 10 }}>
             <div className="field-wrap">
               <label>Telefone</label>
-              <input placeholder="+55 47 9xxxx-xxxx" value={form.telefone} onChange={e => u('telefone', e.target.value)} />
+              <input 
+                placeholder="+55 47 9xxxx-xxxx" 
+                value={form.telefone} 
+                onChange={e => u('telefone', mascaraTelefone(e.target.value))} 
+              />
             </div>
             <div className="field-wrap">
               <label>Qtd. Passageiros</label>
@@ -223,6 +434,7 @@ function App() {
               <input placeholder="Flórida, EUA" value={form.destino} onChange={e => u('destino', e.target.value)} />
             </div>
           </div>
+          
           <div className="field-group">
             <div className="field-wrap">
               <label>Data de Ida</label>
@@ -233,6 +445,21 @@ function App() {
               <input type="date" value={form.dataVolta} onChange={e => u('dataVolta', e.target.value)} />
             </div>
           </div>
+          
+          <div className="field-group full">
+            <div className="field-wrap">
+              <label>URL da Imagem do Destino (opcional)</label>
+              <input placeholder="https://exemplo.com/imagem.jpg" value={form.imagemDestino} onChange={e => u('imagemDestino', e.target.value)} />
+            </div>
+          </div>
+          
+          <div className="field-group full">
+            <div className="field-wrap">
+              <label>URL da Logo Personalizada (opcional)</label>
+              <input placeholder="https://exemplo.com/logo.png" value={form.logoPersonalizado} onChange={e => u('logoPersonalizado', e.target.value)} />
+            </div>
+          </div>
+          
           <div className="field-wrap" style={{ marginBottom: 10 }}>
             <label>Tipo do Itinerário</label>
             <div className="tipo-tags" style={{ marginTop: 6 }}>
@@ -245,9 +472,21 @@ function App() {
           </div>
 
           {/* VOOS */}
-          <div className="section-label">Trechos de Voo</div>
+          <div className="section-header">
+            <div className="section-label">Trechos de Voo</div>
+            {form.trechos.length > 1 && (
+              <button className="btn-sort" onClick={ordenarTrechosPorData}>📅 Ordenar por data</button>
+            )}
+          </div>
           {form.trechos && form.trechos.map((t, i) => (
-            <TrechoForm key={t.id} trecho={t} idx={i} onChange={data => updTrecho(t.id, data)} onRemove={() => remTrecho(t.id)} />
+            <TrechoForm 
+              key={t.id} 
+              trecho={t} 
+              idx={i} 
+              onChange={data => updTrecho(t.id, data)} 
+              onRemove={() => remTrecho(t.id)}
+              onDuplicate={() => duplicateTrecho(t)}
+            />
           ))}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button className="btn-add" onClick={() => addTrecho('IDA')}>+ Trecho de Ida</button>
@@ -255,18 +494,59 @@ function App() {
           </div>
 
           {/* HOSPEDAGEM */}
-          <div className="section-label">Hospedagem</div>
+          <div className="section-header">
+            <div className="section-label">Hospedagem</div>
+            {form.hospedagens.length > 1 && (
+              <button className="btn-sort" onClick={ordenarHospedagensPorData}>📅 Ordenar por check-in</button>
+            )}
+          </div>
           {form.hospedagens && form.hospedagens.map((h, i) => (
-            <HospedagemForm key={h.id} hosp={h} idx={i} onChange={data => updHosp(h.id, data)} onRemove={() => remHosp(h.id)} />
+            <HospedagemForm 
+              key={h.id} 
+              hosp={h} 
+              idx={i} 
+              onChange={data => updHosp(h.id, data)} 
+              onRemove={() => remHosp(h.id)}
+              onDuplicate={() => duplicateHosp(h)}
+            />
           ))}
           <button className="btn-add" onClick={addHosp}>+ Adicionar Hospedagem</button>
 
           {/* INGRESSOS/PASSEIOS */}
           <div className="section-label">Ingressos e Passeios</div>
           {form.ingressos && form.ingressos.map((ing, i) => (
-            <IngressoForm key={ing.id} ingresso={ing} idx={i} onChange={data => updIngresso(ing.id, data)} onRemove={() => remIngresso(ing.id)} />
+            <IngressoForm 
+              key={ing.id} 
+              ingresso={ing} 
+              idx={i} 
+              onChange={data => updIngresso(ing.id, data)} 
+              onRemove={() => remIngresso(ing.id)}
+              onDuplicate={() => duplicateIngresso(ing)}
+            />
           ))}
           <button className="btn-add" onClick={addIngresso}>+ Adicionar Ingresso/Passeio</button>
+
+          {/* NOTAS GERAIS */}
+          <div className="section-label">Checklist de Viagem</div>
+          <div className="checklist-group">
+            <label><input type="checkbox" checked={form.notasGerais?.passaporte} onChange={e => updateNotaGlobal('passaporte', e.target.checked)} /> Passaporte</label>
+            <label><input type="checkbox" checked={form.notasGerais?.visto} onChange={e => updateNotaGlobal('visto', e.target.checked)} /> Visto</label>
+            <label><input type="checkbox" checked={form.notasGerais?.vacinas} onChange={e => updateNotaGlobal('vacinas', e.target.checked)} /> Vacinas em dia</label>
+            <label><input type="checkbox" checked={form.notasGerais?.seguro} onChange={e => updateNotaGlobal('seguro', e.target.checked)} /> Seguro viagem</label>
+            <label><input type="checkbox" checked={form.notasGerais?.checkinRealizado} onChange={e => updateNotaGlobal('checkinRealizado', e.target.checked)} /> Check-in realizado</label>
+          </div>
+          
+          <div className="field-group full">
+            <div className="field-wrap">
+              <label>Observações Gerais da Viagem</label>
+              <textarea 
+                placeholder="Informações adicionais importantes..." 
+                value={form.notasGerais?.observacoes || ''} 
+                onChange={e => updateNotaGlobal('observacoes', e.target.value)} 
+                rows={3}
+              />
+            </div>
+          </div>
 
           {/* AÇÕES */}
           <div className="action-bar">
@@ -274,6 +554,7 @@ function App() {
               {saving ? '⏳ Gerando...' : '📄 Gerar PDF'}
             </button>
             <button className="btn btn-whatsapp" onClick={exportarWhatsApp}>💬 WhatsApp</button>
+            <button className="btn btn-copy" onClick={copiarResumo}>📋 Copiar Resumo</button>
             <button className="btn btn-secondary" onClick={() => localStorage.setItem('gvs_itinerario', JSON.stringify(form))}>💾 Salvar</button>
             <button className="btn btn-danger" onClick={limpar}>🗑 Limpar</button>
           </div>
@@ -285,7 +566,7 @@ function App() {
           </div>
         </div>
 
-        {/* ===== PAINEL DIREITO: PREVIEW (COM SCROLL) ===== */}
+        {/* ===== PAINEL DIREITO: PREVIEW ===== */}
         <div className="preview-panel">
           <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: '#555', textAlign: 'center', fontWeight: 600, marginBottom: 12 }}>
             Preview em Tempo Real — Layout do PDF
@@ -293,9 +574,13 @@ function App() {
           <div ref={previewRef} className="preview-wrapper">
             <div className="preview-watermark">GVS</div>
 
-            {/* HEADER DO PREVIEW - VERSÃO MAIS SUAVE */}
+            {/* HEADER DO PREVIEW */}
             <div className="prev-header">
-              <img src={LOGO_URL} alt="GVS" className="prev-logo" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+              {form.logoPersonalizado ? (
+                <img src={form.logoPersonalizado} alt="Logo" className="prev-logo" />
+              ) : (
+                <img src={LOGO_URL} alt="GVS" className="prev-logo" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+              )}
               <div style={{ display: 'none' }} className="prev-logo-placeholder">GVS</div>
               <div className="prev-header-info">
                 <div className="prev-titulo-viagem">{tituloViagem || 'Itinerário de Viagens'}</div>
@@ -303,17 +588,15 @@ function App() {
                   Consultor: <span>{form.consultor || '—'}</span>
                 </div>
                 <div className="prev-consultor" style={{ marginTop: 2 }}>{form.cargo}</div>
-                {form.tipos && form.tipos.length > 0 && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 6, justifyContent: 'center' }}>
-                    {form.tipos.map(t => (
-                      <span key={t} style={{ background: '#d4af3722', border: '1px solid #d4af37', color: '#d4af37', padding: '2px 8px', borderRadius: 4, fontFamily: "'Inter',sans-serif", fontSize: 8, letterSpacing: 2, fontWeight: 600 }}>
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* Imagem do Destino */}
+            {form.imagemDestino && (
+              <div className="prev-destino-imagem">
+                <img src={form.imagemDestino} alt={form.destino} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8 }} />
+              </div>
+            )}
 
             <div className="prev-body">
               {/* DADOS CLIENTE */}
@@ -365,16 +648,7 @@ function App() {
               {form.hospedagens && form.hospedagens.length > 0 && (
                 <div className="prev-section">
                   <div className="prev-section-title">Hospedagem</div>
-                  {form.hospedagens.map(h => (
-                    <div key={h.id} className="prev-hosp">
-                      <div>
-                        <div className="prev-hosp-hotel">{h.hotel || 'Hotel não informado'}</div>
-                        <div className="prev-hosp-datas">Check-in: {fmtDate(h.inicio) || '—'} &nbsp;•&nbsp; Check-out: {fmtDate(h.fim) || '—'}</div>
-                        {h.obs && <div className="prev-obs" style={{ marginTop: 4 }}>{h.obs}</div>}
-                      </div>
-                      {h.codigo && <div className="prev-hosp-cod">{h.codigo}</div>}
-                    </div>
-                  ))}
+                  {form.hospedagens.map(h => <PreviewHospedagem key={h.id} h={h} />)}
                 </div>
               )}
 
@@ -386,9 +660,39 @@ function App() {
                 </div>
               )}
 
+              {/* CHECKLIST */}
+              <div className="prev-section">
+                <div className="prev-section-title">✓ Checklist de Viagem</div>
+                <div className="checklist-preview">
+                  <div className={`checklist-item ${form.notasGerais?.passaporte ? 'checked' : ''}`}>
+                    {form.notasGerais?.passaporte ? '✓' : '○'} Passaporte
+                  </div>
+                  <div className={`checklist-item ${form.notasGerais?.visto ? 'checked' : ''}`}>
+                    {form.notasGerais?.visto ? '✓' : '○'} Visto
+                  </div>
+                  <div className={`checklist-item ${form.notasGerais?.vacinas ? 'checked' : ''}`}>
+                    {form.notasGerais?.vacinas ? '✓' : '○'} Vacinas em dia
+                  </div>
+                  <div className={`checklist-item ${form.notasGerais?.seguro ? 'checked' : ''}`}>
+                    {form.notasGerais?.seguro ? '✓' : '○'} Seguro viagem
+                  </div>
+                  <div className={`checklist-item ${form.notasGerais?.checkinRealizado ? 'checked' : ''}`}>
+                    {form.notasGerais?.checkinRealizado ? '✓' : '○'} Check-in realizado
+                  </div>
+                </div>
+              </div>
+
+              {/* OBSERVAÇÕES GERAIS */}
+              {form.notasGerais?.observacoes && (
+                <div className="prev-section">
+                  <div className="prev-section-title">📝 Observações Gerais</div>
+                  <div className="prev-obs-text">{form.notasGerais.observacoes}</div>
+                </div>
+              )}
+
               {/* RODAPÉ INFO */}
-              <div style={{ borderTop: '1px solid #d4af3733', paddingTop: 12, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div>
+              <div style={{ borderTop: '1px solid #d4af3733', paddingTop: 12, marginTop: 16 }}>
+                <div style={{ marginBottom: 12 }}>
                   <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 2, fontWeight: 600 }}>
                     Importante
                   </div>
@@ -396,15 +700,35 @@ function App() {
                     Apresente este documento e seus documentos pessoais válidos no momento do embarque. Verifique as exigências de visto e saúde para o destino.
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 }}>
-                    Emitido por
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
+                  <div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 }}>
+                      Emitido por
+                    </div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14, color: '#b8960c', fontWeight: 800 }}>
+                      {form.consultor}
+                    </div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 1, fontWeight: 500 }}>
+                      {form.cargo}
+                    </div>
                   </div>
-                  <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 16, color: '#b8960c', fontWeight: 800 }}>
-                    {form.consultor}
-                  </div>
-                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 1, fontWeight: 500 }}>
-                    {form.cargo}
+                  
+                  {/* RESUMO DA VIAGEM NO RODAPÉ */}
+                  <div style={{ textAlign: 'right', background: '#f5f0e0', padding: '8px 12px', borderRadius: 8, minWidth: 180 }}>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 9, fontWeight: 600, color: '#b8960c', marginBottom: 4 }}>
+                      📊 RESUMO DA VIAGEM
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px', fontSize: 10 }}>
+                      <span style={{ color: '#666' }}>📅 Duração:</span>
+                      <span style={{ fontWeight: 600, color: '#333' }}>{totalDias} dias</span>
+                      <span style={{ color: '#666' }}>✈️ Voos:</span>
+                      <span style={{ fontWeight: 600, color: '#333' }}>{totalVoos}</span>
+                      <span style={{ color: '#666' }}>🏨 Hospedagens:</span>
+                      <span style={{ fontWeight: 600, color: '#333' }}>{totalHospedagens}</span>
+                      <span style={{ color: '#666' }}>🎟️ Ingressos:</span>
+                      <span style={{ fontWeight: 600, color: '#333' }}>{totalIngressos}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -412,7 +736,10 @@ function App() {
 
             {/* FOOTER */}
             <div className="prev-footer">
-              <div className="prev-footer-txt">GVS <span>•</span> Guilherme Vieira Santos <span>•</span> Gestor de Milhas</div>
+              <div className="prev-footer-txt">
+                GVS <span>•</span> Guilherme Vieira Santos <span>•</span> Gestor de Milhas
+                <span style={{ float: 'right' }}>Página 1/1 • Emitido em {new Date().toLocaleDateString('pt-BR')}</span>
+              </div>
             </div>
           </div>
         </div>

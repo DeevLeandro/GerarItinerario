@@ -6,7 +6,18 @@ export const fmtDate = (s) => {
   return `${d}/${m}/${y}`;
 };
 
-// Função para calcular duração do voo
+export const fmtDatePtBr = (s) => {
+  if (!s) return '';
+  const [y, m, d] = s.split('-');
+  return `${d}/${m}/${y}`;
+};
+
+export const fmtDateTime = (date, time) => {
+  if (!date) return '';
+  return `${fmtDate(date)}${time ? ` às ${time}` : ''}`;
+};
+
+// Calcular duração do voo
 export const calcularDuracaoVoo = (horaSaida, horaChegada) => {
   if (!horaSaida || !horaChegada) return '';
   
@@ -17,7 +28,6 @@ export const calcularDuracaoVoo = (horaSaida, horaChegada) => {
     let minutosSaida = saidaH * 60 + saidaM;
     let minutosChegada = chegadaH * 60 + chegadaM;
     
-    // Se a hora de chegada for menor que a de saída, considera que passou da meia-noite
     if (minutosChegada < minutosSaida) {
       minutosChegada += 24 * 60;
     }
@@ -30,6 +40,38 @@ export const calcularDuracaoVoo = (horaSaida, horaChegada) => {
   } catch (e) {
     return '';
   }
+};
+
+// Calcular duração total da viagem em dias
+export const calcularDuracaoViagem = (dataInicio, dataFim) => {
+  if (!dataInicio || !dataFim) return 0;
+  const inicio = new Date(dataInicio);
+  const fim = new Date(dataFim);
+  const diffTime = Math.abs(fim - inicio);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+// Validar código de aeroporto (3 letras)
+export const validarCodigoAeroporto = (codigo) => {
+  if (!codigo) return true; // Campo opcional
+  return /^[A-Z]{3}$/.test(codigo.toUpperCase());
+};
+
+// Validar datas
+export const validarDatas = (dataIda, dataVolta) => {
+  if (!dataIda || !dataVolta) return true;
+  return new Date(dataIda) <= new Date(dataVolta);
+};
+
+// Máscara de telefone
+export const mascaraTelefone = (value) => {
+  if (!value) return '';
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length <= 11) {
+    return numbers.replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
+  }
+  return value;
 };
 
 export const novoTrecho = (tipo = 'IDA') => ({
@@ -58,7 +100,27 @@ export const novaHosp = () => ({
   fim: '',
   hotel: '',
   codigo: '',
-  obs: ''
+  obs: '',
+  // Novos campos
+  endereco: '',
+  numero: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
+  pais: '',
+  cep: '',
+  checkinHorario: '',
+  checkoutHorario: '',
+  cafeIncluso: false,
+  tipoCafe: '',
+  wifi: false,
+  estacionamento: false,
+  quartoNumero: '',
+  tipoQuarto: '',
+  contatoHotel: '',
+  emailHotel: '',
+  linkMaps: '',
+  instrucoesCheckin: ''
 });
 
 export const novoIngresso = () => ({
@@ -71,11 +133,29 @@ export const novoIngresso = () => ({
   obs: ''
 });
 
+// Notas gerais da viagem
+export const notasGlobais = {
+  passaporte: false,
+  visto: false,
+  vacinas: false,
+  seguro: false,
+  checkinRealizado: false,
+  observacoes: ''
+};
+
 export const CIAS = [
   "LATAM", "GOL", "Azul", "American Airlines", "Delta", "United",
   "Emirates", "TAP", "Iberia", "Air France", "Lufthansa", "British Airways",
   "Copa Airlines", "Aeromexico", "Avianca", "JetBlue", "Turkish Airlines",
   "Qatar Airways", "Outra"
+];
+
+export const TIPOS_QUARTO = [
+  "Standard", "Superior", "Deluxe", "Suite", "Presidencial", "Família", "Executivo"
+];
+
+export const TIPOS_CAFE = [
+  "Continental", "Buffet", "Americano", "Completo", "Light", "Não incluso"
 ];
 
 export const limparLocalStorageCorrompido = () => {
@@ -107,14 +187,6 @@ export const limparLocalStorageCorrompido = () => {
       if (!Array.isArray(parsed.hospedagens)) {
         localStorage.removeItem('gvs_itinerario');
         return true;
-      }
-      
-      if (parsed.ingressos && parsed.ingressos.length > 0) {
-        const hasInvalidIngresso = parsed.ingressos.some(ing => !ing || typeof ing !== 'object');
-        if (hasInvalidIngresso) {
-          localStorage.removeItem('gvs_itinerario');
-          return true;
-        }
       }
     }
   } catch (e) {

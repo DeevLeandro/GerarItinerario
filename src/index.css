@@ -1,0 +1,327 @@
+/* Adicione ao final do arquivo App.css existente */
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.toast-success {
+  background: #10b981;
+  color: white;
+}
+
+.toast-error {
+  background: #ef4444;
+  color: white;
+}
+
+.toast-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.toast-info {
+  background: #3b82f6;
+  color: white;
+}
+
+.toast-icon {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Botão Duplicar */
+.btn-duplicate {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-duplicate:hover {
+  background: #2563eb;
+}
+
+/* Botão Ordenar */
+.btn-sort {
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* Checklist Group */
+.checklist-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0;
+  padding: 12px;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.checklist-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Checklist Preview */
+.checklist-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.checklist-item {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #555;
+}
+
+.checklist-item.checked {
+  color: #10b981;
+  text-decoration: line-through;
+}
+
+/* Resumo Viagem */
+.resumo-viagem {
+  background: linear-gradient(135deg, #d4af37 0%, #b8960c 100%);
+  border-radius: 12px;
+  padding: 16px !important;
+  margin-bottom: 20px;
+}
+
+.resumo-viagem .prev-section-title {
+  color: white !important;
+  border-bottom-color: rgba(255,255,255,0.3) !important;
+}
+
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.resumo-item {
+  text-align: center;
+}
+
+.resumo-valor {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.resumo-label {
+  display: block;
+  font-size: 10px;
+  color: rgba(255,255,255,0.9);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* Preview Hospedagem Melhorado */
+.prev-hosp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.prev-hosp-endereco {
+  font-size: 11px;
+  color: #666;
+  margin: 6px 0;
+}
+
+.prev-hosp-datas {
+  font-size: 12px;
+  color: #444;
+  margin: 6px 0;
+}
+
+.prev-hosp-cafe {
+  font-size: 12px;
+  color: #10b981;
+  margin: 6px 0;
+}
+
+.prev-hosp-servicos {
+  display: flex;
+  gap: 12px;
+  margin: 6px 0;
+  font-size: 11px;
+}
+
+.prev-hosp-quarto {
+  font-size: 12px;
+  color: #8b5cf6;
+  margin: 6px 0;
+}
+
+.prev-hosp-contato {
+  font-size: 11px;
+  color: #3b82f6;
+  margin: 6px 0;
+}
+
+.prev-hosp-maps {
+  margin: 6px 0;
+}
+
+.prev-hosp-maps a {
+  font-size: 11px;
+  color: #d4af37;
+  text-decoration: none;
+}
+
+.prev-hosp-maps a:hover {
+  text-decoration: underline;
+}
+
+.prev-hosp-instrucoes {
+  font-size: 11px;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 6px;
+  border-radius: 4px;
+  margin: 6px 0;
+}
+
+/* Tema Escuro */
+.dark-theme {
+  background: #1a1a2e;
+}
+
+.dark-theme .form-panel {
+  background: #16213e;
+}
+
+.dark-theme .preview-panel {
+  background: #0f3460;
+}
+
+.dark-theme .preview-wrapper {
+  background: #1a1a2e;
+  color: #eee;
+}
+
+.dark-theme .prev-field-label,
+.dark-theme .prev-section-title {
+  color: #d4af37;
+}
+
+.dark-theme .prev-field-value {
+  color: #eee;
+}
+
+/* Checkbox Wrap */
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-wrap label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* Tema Toggle */
+.theme-toggle {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  background: rgba(0,0,0,0.1);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  background: rgba(0,0,0,0.2);
+  transform: scale(1.1);
+}
+
+/* Botão Copy */
+.btn-copy {
+  background: #10b981;
+  color: white;
+  border: none;
+}
+
+.btn-copy:hover {
+  background: #059669;
+}
+
+/* Imagem Destino Preview */
+.prev-destino-imagem {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Observações Texto */
+.prev-obs-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #666;
+  line-height: 1.5;
+  padding: 8px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 6px;
+}
