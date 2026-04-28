@@ -91,7 +91,12 @@ export const novoTrecho = (tipo = 'IDA') => ({
   bagKg: '',
   bagMao: '',
   localizadores: [{ id: uid(), code: '', pax: '' }],
-  obs: ''
+  obs: '',
+  conexao: '',           // NOVO: '', '1', '2', '3'
+  conexaoLocal: '',      // NOVO: local da primeira conexão
+  conexaoDuracao: '',    // NOVO: duração da primeira conexão
+  conexaoLocal2: '',     // NOVO: local da segunda conexão (para 2 conexões)
+  conexaoDuracao2: ''    // NOVO: duração da segunda conexão
 });
 
 export const novaHosp = () => ({

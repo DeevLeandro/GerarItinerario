@@ -6,6 +6,22 @@ const PreviewTrecho = ({ t }) => {
   const locStr = locs.length ? locs.map(l => l.code).join(' e ') : '';
   const duracao = calcularDuracaoVoo(t.horaSaida, t.horaChegada);
 
+  // Função para mostrar texto da conexão
+  const getConexaoTexto = () => {
+    if (!t.conexao || t.conexao === '') return null;
+    
+    const numConexoes = parseInt(t.conexao);
+    if (numConexoes === 1) {
+      return `🔁 1 conexão em ${t.conexaoLocal || 'local não informado'}${t.conexaoDuracao ? ` (espera de ${t.conexaoDuracao})` : ''}`;
+    } else if (numConexoes === 2) {
+      return `🔁 2 conexões: ${t.conexaoLocal || '?'}${t.conexaoDuracao ? ` (${t.conexaoDuracao})` : ''} e ${t.conexaoLocal2 || '?'}${t.conexaoDuracao2 ? ` (${t.conexaoDuracao2})` : ''}`;
+    } else {
+      return `🔁 ${numConexoes} conexões`;
+    }
+  };
+
+  const conexaoTexto = getConexaoTexto();
+
   return (
     <div className="prev-trecho">
       <div className="prev-trecho-header">
@@ -38,6 +54,15 @@ const PreviewTrecho = ({ t }) => {
           <div className="prev-aeroporto-cidade">{t.cidadeDestino}</div>
         </div>
       </div>
+      
+      {/* EXIBIR CONEXÃO - NOVO */}
+      {conexaoTexto && (
+        <div className="prev-conexao">
+          <span className="prev-conexao-icon">🔄</span>
+          <span className="prev-conexao-text">{conexaoTexto}</span>
+        </div>
+      )}
+      
       {locStr && (
         <div className="prev-localizadores">
           <div className="prev-loc-label">Localizador</div>

@@ -1040,3 +1040,74 @@ body {
 .logo-placeholder {
   display: none;
 }
+
+/* Adicione no final do arquivo App.css */
+
+/* Estilos para Conexão no Preview */
+.prev-conexao {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #d4af37;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.prev-conexao-icon {
+  font-size: 12px;
+}
+
+.prev-conexao-text {
+  color: #d4af37;
+  font-weight: 500;
+}
+
+/* Tema escuro para conexão */
+.dark-theme .prev-conexao {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+/* Estilo para o select de conexão no formulário */
+.trecho-card select[name="conexao"] {
+  background: #222;
+  border: 1px solid #444;
+  color: #fff;
+}
+
+/* Destaque para o campo de conexão */
+.trecho-card .field-wrap:has(> label[style*="color: #d4af37"]) {
+  border-top: 1px solid #d4af3733;
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+/* Estilos para Conexão no Preview */
+.prev-conexao {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  padding: 6px 10px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #d4af37;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.prev-conexao-icon {
+  font-size: 12px;
+}
+
+.prev-conexao-text {
+  color: #d4af37;
+  font-weight: 500;
+}
+
+/* Tema escuro para conexão */
+.dark-theme .prev-conexao {
+  background: rgba(212, 175, 55, 0.2);
+}

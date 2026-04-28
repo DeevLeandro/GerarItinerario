@@ -2,7 +2,7 @@ import React from 'react';
 import LocalizadoresInput from './LocalizadoresInput';
 import { CIAS } from '../utils/helpers';
 
-const TrechoForm = ({ trecho, onChange, onRemove, idx }) => {
+const TrechoForm = ({ trecho, onChange, onRemove, onDuplicate, idx }) => {
   const u = (field, val) => onChange({ ...trecho, [field]: val });
 
   return (
@@ -20,6 +20,9 @@ const TrechoForm = ({ trecho, onChange, onRemove, idx }) => {
             <option>IDA</option>
             <option>VOLTA</option>
           </select>
+          {onDuplicate && (
+            <button className="btn-duplicate" onClick={onDuplicate}>📋 Duplicar</button>
+          )}
           <button className="btn-remove" onClick={onRemove}>Remover</button>
         </div>
       </div>
@@ -80,6 +83,64 @@ const TrechoForm = ({ trecho, onChange, onRemove, idx }) => {
           </select>
         </div>
       </div>
+      
+      {/* SEÇÃO DE CONEXÃO - NOVO */}
+      <div className="field-group full" style={{ marginTop: 8, borderTop: '1px solid #444', paddingTop: 8 }}>
+        <div className="field-wrap">
+          <label style={{ color: '#d4af37', fontWeight: 600 }}>🔄 Conexão (se houver)</label>
+          <select value={trecho.conexao || ''} onChange={e => u('conexao', e.target.value)}>
+            <option value="">Voo Direto</option>
+            <option value="1">1 conexão</option>
+            <option value="2">2 conexões</option>
+            <option value="3">3+ conexões</option>
+          </select>
+        </div>
+      </div>
+      
+      {trecho.conexao && trecho.conexao !== '' && (
+        <>
+          <div className="field-group">
+            <div className="field-wrap">
+              <label>Local da Conexão</label>
+              <input 
+                placeholder="Ex: GRU (São Paulo), MIA (Miami)" 
+                value={trecho.conexaoLocal || ''} 
+                onChange={e => u('conexaoLocal', e.target.value)} 
+              />
+            </div>
+            <div className="field-wrap">
+              <label>Tempo de Conexão</label>
+              <input 
+                placeholder="Ex: 2h30, 3 horas" 
+                value={trecho.conexaoDuracao || ''} 
+                onChange={e => u('conexaoDuracao', e.target.value)} 
+              />
+            </div>
+          </div>
+          
+          {trecho.conexao === '2' && (
+            <div className="field-group">
+              <div className="field-wrap">
+                <label>2º Local da Conexão</label>
+                <input 
+                  placeholder="Ex: CDG (Paris)" 
+                  value={trecho.conexaoLocal2 || ''} 
+                  onChange={e => u('conexaoLocal2', e.target.value)} 
+                />
+              </div>
+              <div className="field-wrap">
+                <label>Tempo da 2ª Conexão</label>
+                <input 
+                  placeholder="Ex: 1h45" 
+                  value={trecho.conexaoDuracao2 || ''} 
+                  onChange={e => u('conexaoDuracao2', e.target.value)} 
+                />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      
       <div className="field-group">
         <div className="field-wrap">
           <label>Bagagem Despachada (qtd)</label>
