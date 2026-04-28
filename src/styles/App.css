@@ -1111,3 +1111,116 @@ body {
 .dark-theme .prev-conexao {
   background: rgba(212, 175, 55, 0.2);
 }
+/* ══════════════════════════════════════════════════════════════════
+   ITINERÁRIO CRONOLÓGICO — Voo → Hotel → Voo → Hotel
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Bloco que agrupa um voo + suas hospedagens no FORMULÁRIO */
+.trecho-bloco {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+/* Botão para adicionar hospedagem vinculada ao trecho */
+.btn-add-hosp-trecho {
+  width: 100%;
+  background: linear-gradient(135deg, #1a2e1a 0%, #1e3a1e 100%);
+  border: 1px dashed #3a6a3a;
+  color: #6abf6a;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 0 0 8px 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  margin-top: -2px;
+  letter-spacing: 0.5px;
+}
+.btn-add-hosp-trecho:hover {
+  background: linear-gradient(135deg, #1e3a1e 0%, #244424 100%);
+  border-color: #5aaf5a;
+  color: #8acf8a;
+}
+
+/* Área das hospedagens vinculadas no FORMULÁRIO */
+.hospedagens-vinculadas {
+  border-left: 3px solid #d4af37;
+  margin-left: 12px;
+  padding-left: 12px;
+  background: linear-gradient(90deg, rgba(212,175,55,0.04) 0%, transparent 100%);
+}
+
+.hospedagens-vinculadas-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #d4af37;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 8px 0 6px;
+}
+.hospedagens-vinculadas-label .hv-icon { font-size: 14px; }
+.hospedagens-vinculadas-label .hv-linha {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, #d4af3755, transparent);
+}
+
+/* ── PREVIEW: bloco cronológico ── */
+.prev-trecho-bloco {
+  margin-bottom: 12px;
+}
+
+/* Conector visual entre blocos (seta de cima para baixo) */
+.prev-cronologia-conector {
+  width: 2px;
+  height: 16px;
+  background: linear-gradient(180deg, #d4af37 0%, transparent 100%);
+  margin: 0 auto 4px;
+  opacity: 0.4;
+}
+
+/* Container do voo no preview */
+.prev-cronologia-voo {
+  /* usa o estilo .prev-trecho já existente */
+}
+
+/* Container das hospedagens vinculadas no preview */
+.prev-cronologia-hosps {
+  margin-top: 0;
+}
+
+.prev-cronologia-hosp-item {
+  border-left: 3px solid #d4af37;
+  margin-left: 20px;
+  margin-top: 4px;
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+}
+
+/* Badge "🏨 Hospedagem" no preview */
+.prev-cronologia-hosp-badge {
+  background: linear-gradient(135deg, #d4af37 0%, #b8960c 100%);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Ajuste visual: o prev-hosp dentro do bloco cronológico */
+.prev-cronologia-hosp-item .prev-hosp {
+  border-radius: 0;
+  border-left: none;
+  margin-top: 0;
+}
