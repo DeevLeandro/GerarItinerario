@@ -867,7 +867,8 @@ body {
 .prev-obs {
   font-family: 'Inter', sans-serif;
   font-size: 10px;
-  color: #666;
+  font-weight: bold;
+  color: #000000;
   font-style: italic;
   margin-top: 6px;
 }
