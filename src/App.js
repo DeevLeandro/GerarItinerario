@@ -320,7 +320,7 @@ function App() {
             </div>
           </div>
 
-          <div className="section-label" style={{ fontSize: 9, margin: '12px 0 8px' }}>Passageiros</div>
+          <div className="section-label" style={{ fontSize: 11, margin: '12px 0 8px' }}>Passageiros</div>
           <div className="passengers-list">
             {form.nomes.map((n, i) => (
               <div key={i} className="loc-row">
@@ -503,7 +503,7 @@ function App() {
             <button className="btn btn-danger" onClick={limpar}>🗑 Limpar</button>
           </div>
           <div style={{ marginTop: 8, padding: '8px 12px', background: '#0a1a0a', borderRadius: 6, border: '1px solid #1a4a1a' }}>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 9, color: '#4a8a4a', letterSpacing: 2, textAlign: 'center', fontWeight: 500 }}>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#4a8a4a', letterSpacing: 2, textAlign: 'center', fontWeight: 500 }}>
               ✔ SALVO AUTOMATICAMENTE NO NAVEGADOR
             </div>
           </div>
@@ -511,7 +511,7 @@ function App() {
 
         {/* ══════════════════════ PAINEL DIREITO: PREVIEW ══════════════════════ */}
         <div className="preview-panel">
-          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: '#555', textAlign: 'center', fontWeight: 600, marginBottom: 12 }}>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: '#555', textAlign: 'center', fontWeight: 600, marginBottom: 12 }}>
             Preview em Tempo Real — Layout do PDF
           </div>
           <div ref={previewRef} className="preview-wrapper">
@@ -639,19 +639,19 @@ function App() {
               {/* RODAPÉ INFO */}
               <div style={{ borderTop: '1px solid #d4af3733', paddingTop: 12, marginTop: 16 }}>
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 2, fontWeight: 600 }}>Importante</div>
-                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: '#444', fontStyle: 'italic' }}>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 2, fontWeight: 600 }}>Importante</div>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "#444", fontStyle: 'italic' }}>
                     Apresente este documento e seus documentos pessoais válidos no momento do embarque. Verifique as exigências de visto e saúde para o destino.
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
                   <div>
-                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 }}>Emitido por</div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#888', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 }}>Emitido por</div>
                     <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14, color: '#b8960c', fontWeight: 800 }}>{form.consultor}</div>
-                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 8, color: '#888', letterSpacing: 1, fontWeight: 500 }}>{form.cargo}</div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#888', letterSpacing: 1, fontWeight: 500 }}>{form.cargo}</div>
                   </div>
                   <div style={{ textAlign: 'right', background: '#f5f0e0', padding: '8px 12px', borderRadius: 8, minWidth: 180 }}>
-                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 9, fontWeight: 600, color: '#b8960c', marginBottom: 4 }}>📊 RESUMO DA VIAGEM</div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 600, color: '#b8960c', marginBottom: 4 }}>📊 RESUMO DA VIAGEM</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px', fontSize: 10 }}>
                       <span style={{ color: '#666' }}>📅 Duração:</span><span style={{ fontWeight: 600, color: '#333' }}>{totalDias} dias</span>
                       <span style={{ color: '#666' }}>✈️ Voos:</span><span style={{ fontWeight: 600, color: '#333' }}>{totalVoos}</span>

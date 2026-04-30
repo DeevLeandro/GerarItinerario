@@ -43,11 +43,11 @@ const PreviewTrecho = ({ t }) => {
             <span className="prev-rota-duracao">{duracao}</span>
             <span className="prev-rota-time">
               {t.horaChegada || '--:--'}
-              {t.indicador ? <sup style={{ color: '#d4af37', fontSize: 9 }}> {t.indicador}</sup> : ''}
+              {t.indicador ? <sup style={{ color: '#d4af37', fontSize: 11 }}> {t.indicador}</sup> : ''}
             </span>
           </div>
           <div className="prev-rota-arrow" />
-          <div className="prev-rota-data">{fmtDate(t.data)}</div>
+          <div className="prev-rota-data"><strong>{fmtDate(t.data)}</strong></div>
         </div>
         <div className="prev-aeroporto" style={{ textAlign: 'right' }}>
           <div className="prev-aeroporto-cod">{t.destinoCod || '---'}</div>
@@ -68,7 +68,7 @@ const PreviewTrecho = ({ t }) => {
           <div className="prev-loc-label">Localizador</div>
           <div className="prev-loc-value">({locStr})</div>
           {locs.filter(l => l.pax).map(l => (
-            <div key={l.id} style={{ fontFamily: "'Inter',sans-serif", fontSize: 9, color: '#888', marginTop: 2 }}>
+            <div key={l.id} style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#888', marginTop: 2 }}>
               ● {l.code} — {l.pax}
             </div>
           ))}

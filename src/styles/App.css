@@ -542,7 +542,7 @@ body {
 
 .prev-titulo-viagem {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 800;
   color: #d4af37;
   letter-spacing: 1px;
@@ -550,13 +550,13 @@ body {
 
 @media (min-width: 768px) {
   .prev-titulo-viagem {
-    font-size: 20px;
+    font-size: 26px;
   }
 }
 
 .prev-consultor {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: #aaa;
   text-transform: uppercase;
@@ -575,7 +575,7 @@ body {
   padding: 2px 8px;
   border-radius: 4px;
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 2px;
   font-weight: 600;
 }
@@ -600,7 +600,7 @@ body {
 
 .prev-section-title {
   font-family: 'Inter', sans-serif;
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 4px;
   text-transform: uppercase;
   color: #b8960c;
@@ -643,7 +643,7 @@ body {
 
 .prev-field-label {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #888;
@@ -652,7 +652,7 @@ body {
 
 .prev-field-value {
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   color: #1a1a1a;
   font-weight: 500;
 }
@@ -683,7 +683,7 @@ body {
 
 .prev-trecho-badge {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -703,7 +703,7 @@ body {
 
 .prev-trecho-cia {
   font-family: 'Inter', sans-serif;
-  font-size: 9px;
+  font-size: 12px;
   color: #666;
   letter-spacing: 1px;
 }
@@ -731,7 +731,7 @@ body {
 /* LETRAS MENORES PARA CIDADES */
 .prev-aeroporto-cod {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 16px;
+  font-size: 26px;
   font-weight: 800;
   color: #0d0d0d;
   line-height: 1;
@@ -739,13 +739,13 @@ body {
 
 @media (min-width: 768px) {
   .prev-aeroporto-cod {
-    font-size: 20px;
+    font-size: 30px;
   }
 }
 
 .prev-aeroporto-cidade {
   font-family: 'Inter', sans-serif;
-  font-size: 7px;
+  font-size: 10px;
   color: #888;
   letter-spacing: 1px;
 }
@@ -769,14 +769,14 @@ body {
 
 .prev-rota-time {
   font-family: 'Inter', sans-serif;
-  font-size: 11px;
+  font-size: 20px;
   font-weight: 700;
   color: #0d0d0d;
 }
 
 .prev-rota-duracao {
   font-family: 'Inter', sans-serif;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 600;
   color: #b8960c;
   background: #d4af3710;
@@ -807,8 +807,9 @@ body {
 
 .prev-rota-data {
   font-family: 'Inter', sans-serif;
-  font-size: 7px;
-  color: #888;
+  font-size: 11px;
+  font-weight: 700;
+  color: #444;
   letter-spacing: 1px;
   margin-top: 2px;
 }
@@ -821,7 +822,7 @@ body {
 
 .prev-loc-label {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #b8960c;
@@ -830,14 +831,14 @@ body {
 
 .prev-loc-value {
   font-family: 'Inter', sans-serif;
-  font-size: 12px;
+  font-size: 16px;
   color: #0d0d0d;
   font-weight: 600;
 }
 
 .prev-loc-pax {
   font-family: 'Inter', sans-serif;
-  font-size: 9px;
+  font-size: 11px;
   color: #888;
   margin-top: 2px;
 }
@@ -851,7 +852,7 @@ body {
 
 .prev-bag-item {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 11px;
   color: #444;
   display: flex;
   align-items: center;
@@ -861,7 +862,7 @@ body {
 .prev-bag-item::before {
   content: '●';
   color: #d4af37;
-  font-size: 6px;
+  font-size: 8px;
 }
 
 .prev-obs {
@@ -895,15 +896,15 @@ body {
 
 .prev-hosp-hotel {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 15px;
+  font-size: 20px;
   color: #0d0d0d;
   font-weight: 700;
 }
 
 .prev-hosp-datas {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
-  color: #888;
+  font-size: 12px;
+  color: #555;
   letter-spacing: 1px;
 }
 
@@ -937,15 +938,15 @@ body {
 
 .prev-ingresso-nome {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 15px;
+  font-size: 20px;
   color: #0d0d0d;
   font-weight: 700;
 }
 
 .prev-ingresso-detalhes {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
-  color: #888;
+  font-size: 12px;
+  color: #555;
   letter-spacing: 1px;
 }
 
@@ -976,7 +977,7 @@ body {
 
 .prev-footer-label {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #888;
@@ -993,14 +994,14 @@ body {
 
 .prev-footer-nome {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
+  font-size: 18px;
   color: #b8960c;
   font-weight: 800;
 }
 
 .prev-footer-cargo {
   font-family: 'Inter', sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   color: #888;
   letter-spacing: 1px;
 }
@@ -1026,7 +1027,7 @@ body {
 
 .prev-footer-txt {
   font-family: 'Inter', sans-serif;
-  font-size: 7px;
+  font-size: 10px;
   color: #888;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -1223,4 +1224,25 @@ body {
   border-radius: 0;
   border-left: none;
   margin-top: 0;
+}
+
+/* ── Seções de Bagagem no Formulário ── */
+.bag-section {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(212,175,55,0.05);
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+.bag-section + .bag-section {
+  margin-top: 6px;
+}
+.bag-section-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #d4af37;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
