@@ -231,7 +231,13 @@ function App() {
     const nomes = form.nomes.filter(Boolean).join(', ');
     const trechosMsg = form.trechos.map(t => {
       const duracao = calcularDuracaoVoo(t.horaSaida, t.horaChegada);
-      let linha = `✈️ *${t.tipo}*: ${t.origemCod || '???'} → ${t.destinoCod || '???'}\n   📅 ${fmtDate(t.data)} • ${t.horaSaida || '--:--'} → ${t.horaChegada || '--:--'} (${duracao})\n   🏢 ${t.cia} ${t.numVoo}`;
+      const bagDesp = t.bagQtd
+        ? `\n   🧳 ${t.bagQtd} bag. despachada(s)${t.bagKg ? ` • ${t.bagKg}kg` : ''}${t.bagPorPax ? ' • por passageiro' : ''}`
+        : '';
+      const bagMao = (t.bagMaoQtd || t.bagMao)
+        ? `\n   👜 ${t.bagMaoQtd ? `${t.bagMaoQtd} bag. de mão` : t.bagMao}${t.bagMaoKg ? ` • ${t.bagMaoKg}kg` : ''}${t.bagMaoPorPax ? ' • por passageiro' : ''}`
+        : '';
+      let linha = `✈️ *${t.tipo}*: ${t.origemCod || '???'} → ${t.destinoCod || '???'}\n   📅 ${fmtDate(t.data)} • ${t.horaSaida || '--:--'} → ${t.horaChegada || '--:--'} (${duracao})\n   🏢 ${t.cia} ${t.numVoo}${bagDesp}${bagMao}`;
       (t.hospedagens || []).forEach(h => {
         linha += `\n   🏨 ${h.hotel || 'Hotel'} • Check-in: ${fmtDate(h.inicio)} • Check-out: ${fmtDate(h.fim)}`;
       });

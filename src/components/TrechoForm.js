@@ -141,20 +141,49 @@ const TrechoForm = ({ trecho, onChange, onRemove, onDuplicate, idx }) => {
         </>
       )}
       
-      <div className="field-group">
-        <div className="field-wrap">
-          <label>Bagagem Despachada (qtd)</label>
-          <input type="number" min="0" value={trecho.bagQtd} onChange={e => u('bagQtd', e.target.value)} />
+      {/* BAGAGEM DESPACHADA */}
+      <div className="bag-section">
+        <div className="bag-section-title">🧳 Bagagem Despachada</div>
+        <div className="field-group">
+          <div className="field-wrap">
+            <label>Quantidade</label>
+            <input type="number" min="0" placeholder="0" value={trecho.bagQtd} onChange={e => u('bagQtd', e.target.value)} />
+          </div>
+          <div className="field-wrap">
+            <label>Peso (kg)</label>
+            <input type="number" min="0" placeholder="0" value={trecho.bagKg} onChange={e => u('bagKg', e.target.value)} />
+          </div>
         </div>
-        <div className="field-wrap">
-          <label>Peso (kg)</label>
-          <input type="number" min="0" value={trecho.bagKg} onChange={e => u('bagKg', e.target.value)} />
+        <div className="field-group">
+          <div className="field-wrap checkbox-wrap">
+            <label>
+              <input type="checkbox" checked={!!trecho.bagPorPax} onChange={e => u('bagPorPax', e.target.checked)} />
+              Por passageiro
+            </label>
+          </div>
         </div>
       </div>
-      <div className="field-group full">
-        <div className="field-wrap">
-          <label>Bagagem de Mão</label>
-          <input placeholder="1 bagagem de mão (10kg)" value={trecho.bagMao} onChange={e => u('bagMao', e.target.value)} />
+
+      {/* BAGAGEM DE MÃO */}
+      <div className="bag-section">
+        <div className="bag-section-title">👜 Bagagem de Mão</div>
+        <div className="field-group">
+          <div className="field-wrap">
+            <label>Quantidade</label>
+            <input type="number" min="0" placeholder="0" value={trecho.bagMaoQtd || ''} onChange={e => u('bagMaoQtd', e.target.value)} />
+          </div>
+          <div className="field-wrap">
+            <label>Peso (kg)</label>
+            <input type="number" min="0" placeholder="0" value={trecho.bagMaoKg || ''} onChange={e => u('bagMaoKg', e.target.value)} />
+          </div>
+        </div>
+        <div className="field-group">
+          <div className="field-wrap checkbox-wrap">
+            <label>
+              <input type="checkbox" checked={!!trecho.bagMaoPorPax} onChange={e => u('bagMaoPorPax', e.target.checked)} />
+              Por passageiro
+            </label>
+          </div>
         </div>
       </div>
       <div className="field-group full" style={{ marginTop: 8 }}>

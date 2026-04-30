@@ -75,8 +75,16 @@ const PreviewTrecho = ({ t }) => {
         </div>
       )}
       <div className="prev-bagagem">
-        {t.bagQtd ? <span className="prev-bag-item">{t.bagQtd} bagagem(ns) despachada(s){t.bagKg ? ` • ${t.bagKg}kg` : ''}</span> : null}
-        {t.bagMao ? <span className="prev-bag-item">{t.bagMao}</span> : null}
+        {t.bagQtd ? (
+          <span className="prev-bag-item">
+            🧳 {t.bagQtd} bagagem(ns) despachada(s){t.bagKg ? ` • ${t.bagKg}kg` : ''}{t.bagPorPax ? ' • por passageiro' : ''}
+          </span>
+        ) : null}
+        {(t.bagMaoQtd || t.bagMao) ? (
+          <span className="prev-bag-item">
+            👜 {t.bagMaoQtd ? `${t.bagMaoQtd} bagagem(ns) de mão` : t.bagMao}{t.bagMaoKg ? ` • ${t.bagMaoKg}kg` : ''}{t.bagMaoPorPax ? ' • por passageiro' : ''}
+          </span>
+        ) : null}
       </div>
       {t.obs && <div className="prev-obs">* {t.obs}</div>}
     </div>

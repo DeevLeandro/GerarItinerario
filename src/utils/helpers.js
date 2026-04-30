@@ -89,7 +89,11 @@ export const novoTrecho = (tipo = 'IDA') => ({
   indicador: '',
   bagQtd: '',
   bagKg: '',
-  bagMao: '',
+  bagPorPax: false,      // bagagem despachada: por passageiro?
+  bagMaoQtd: '',         // quantidade bagagem de mão
+  bagMaoKg: '',          // peso bagagem de mão
+  bagMaoPorPax: false,   // bagagem de mão: por passageiro?
+  bagMao: '',            // campo legado (mantido para compatibilidade)
   localizadores: [{ id: uid(), code: '', pax: '' }],
   obs: '',
   conexao: '',           // NOVO: '', '1', '2', '3'
