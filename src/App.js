@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import html2pdf from 'html2pdf.js';
 import TrechoForm from './components/TrechoForm';
 import HospedagemForm from './components/HospedagemForm';
 import IngressoForm from './components/IngressoForm';
@@ -201,14 +202,38 @@ function App() {
     const el = previewRef.current;
     const nomeArq = (form.nomes[0] || 'cliente').toLowerCase().replace(/\s+/g, '_');
     const opt = {
-      margin: [10, 10, 10, 10],
+      margin: [15, 12, 15, 12],
       filename: `itinerario_${nomeArq}_${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        letterRendering: true,
+        scrollX: 0,
+        scrollY: 0
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'],
+        avoid: [
+          '.prev-trecho',
+          '.prev-trecho-bloco',
+          '.prev-hosp',
+          '.prev-ingresso',
+          '.prev-section',
+          '.prev-cronologia-hosp-item',
+          '.prev-rota',
+          '.prev-localizadores',
+          '.prev-bagagem',
+          '.checklist-preview',
+          '.prev-header',
+          '.prev-footer'
+        ]
+      }
     };
     try {
-      await window.html2pdf().set(opt).from(el).save();
+      await html2pdf().set(opt).from(el).save();
       showToast('PDF gerado com sucesso!', 'success');
     } catch (e) {
       showToast('Erro ao gerar PDF: ' + e.message, 'error');
@@ -545,7 +570,7 @@ function App() {
                 <div className="prev-cliente-grid">
                   <div className="prev-field">
                     <div className="prev-field-label">Passageiro(s)</div>
-                    <div className="prev-field-value" style={{ fontSize: 16 }}>{form.nomes.filter(Boolean).join(' • ') || '—'}</div>
+                    <div className="prev-field-value" style={{ fontSize: 20 }}>{form.nomes.filter(Boolean).join(' • ') || '—'}</div>
                   </div>
                   <div className="prev-field">
                     <div className="prev-field-label">Telefone</div>
@@ -647,7 +672,7 @@ function App() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
                   <div>
                     <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#888', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 }}>Emitido por</div>
-                    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14, color: '#b8960c', fontWeight: 800 }}>{form.consultor}</div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 18, color: '#b8960c', fontWeight: 800 }}>{form.consultor}</div>
                     <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#888', letterSpacing: 1, fontWeight: 500 }}>{form.cargo}</div>
                   </div>
                   <div style={{ textAlign: 'right', background: '#f5f0e0', padding: '8px 12px', borderRadius: 8, minWidth: 180 }}>

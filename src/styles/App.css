@@ -1246,3 +1246,80 @@ body {
   text-transform: uppercase;
   margin-bottom: 8px;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   PAGE BREAK — Evitar corte de conteúdo na geração do PDF
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Regra base: nunca cortar estes elementos no meio de uma página */
+.prev-trecho,
+.prev-trecho-bloco,
+.prev-hosp,
+.prev-ingresso,
+.prev-section,
+.prev-cronologia-hosp-item,
+.prev-cronologia-hosps,
+.prev-rota,
+.prev-rota-line,
+.prev-trecho-header,
+.prev-localizadores,
+.prev-bagagem,
+.prev-conexao,
+.prev-header,
+.prev-footer,
+.checklist-preview,
+.prev-cliente-grid {
+  break-inside: avoid;
+  page-break-inside: avoid; /* fallback para navegadores mais antigos */
+}
+
+/* Cada bloco de voo (voo + hotel vinculado) tenta ficar junto */
+.prev-trecho-bloco {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Seções completas: tentar manter juntas; se não couber, quebrar ANTES */
+.prev-section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Itens internos do preview de hospedagem */
+.prev-hosp-header,
+.prev-hosp-datas,
+.prev-hosp-cafe,
+.prev-hosp-servicos,
+.prev-hosp-quarto,
+.prev-hosp-contato,
+.prev-hosp-instrucoes,
+.prev-obs {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Garantir que o rodapé nunca seja cortado */
+.prev-footer {
+  break-before: avoid;
+  page-break-before: avoid;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Adiciona padding extra na preview-wrapper para respirar nas quebras */
+.preview-wrapper {
+  padding-bottom: 20px;
+}
+
+/* Garante que blocos de texto longo não sejam cortados no meio de uma linha */
+.prev-obs-text,
+.prev-bag-item,
+.prev-loc-value,
+.prev-aeroporto-cidade,
+.prev-field-value,
+.prev-consultor {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  orphans: 3;
+  widows: 3;
+}
