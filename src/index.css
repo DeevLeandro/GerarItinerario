@@ -1500,3 +1500,239 @@ body {
   color: #d4af37;
   border-color: #d4af37;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   ADIÇÕES AO App.css — Cole no final do arquivo existente
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── FUSO HORÁRIO no formulário ── */
+.tz-section {
+  margin: 8px 0;
+  padding: 10px 12px;
+  background: rgba(212, 175, 55, 0.04);
+  border: 1px solid #2a2a1a;
+  border-radius: 6px;
+}
+.tz-section-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #d4af37;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tz-duracao-info {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: rgba(212, 175, 55, 0.12);
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #d4af37;
+  border-left: 3px solid #d4af37;
+}
+.tz-hint {
+  margin-top: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #555;
+  font-style: italic;
+}
+
+/* ── FUSO HORÁRIO no preview ── */
+.prev-aeroporto-tz {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  color: #b8960c;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/* ── TRECHO DE CARRO — badge e card ── */
+.trecho-badge.carro {
+  background: linear-gradient(135deg, #1a2e1a, #2a4a2a);
+  color: #6abf6a;
+  border: 1px solid #3a6a3a;
+}
+
+.carro-card {
+  border-color: #3a6a3a !important;
+  border-left: 3px solid #5aaf5a !important;
+}
+
+/* PREVIEW do carro */
+.prev-carro {
+  border-left-color: #5aaf5a !important;
+}
+.prev-trecho-badge.carro {
+  background: #1a3a1a;
+  color: #6abf6a;
+  font-size: 11px;
+}
+
+/* Seta terrestre — substitui o avião */
+.prev-rota-arrow-carro::after {
+  content: '🚗';
+  position: absolute;
+  right: -4px;
+  top: -8px;
+  font-size: 10px;
+  color: #5aaf5a;
+}
+
+/* ── BOTÃO DUPLICAR ── */
+.btn-duplicate {
+  background: none;
+  border: 1px solid #444;
+  color: #aaa;
+  padding: 4px 10px;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-duplicate:hover {
+  background: #222;
+  color: #d4af37;
+  border-color: #d4af37;
+}
+
+/* ── SECTION HEADER com botão de ordenar ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.btn-sort {
+  background: none;
+  border: 1px solid #444;
+  color: #888;
+  padding: 4px 10px;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.btn-sort:hover {
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+/* ── CHECKLIST no formulário ── */
+.checklist-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.checklist-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ccc;
+  cursor: pointer;
+}
+.checklist-group input[type="checkbox"] {
+  accent-color: #d4af37;
+  width: 15px;
+  height: 15px;
+}
+
+/* ── CHECKLIST no preview ── */
+.checklist-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.checklist-item {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #888;
+  padding: 4px 10px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: #f5f5f5;
+}
+.checklist-item.checked {
+  color: #2a7a2a;
+  border-color: #5aaf5a;
+  background: #f0fff0;
+  font-weight: 600;
+}
+
+/* ── BTN COPY (ação) ── */
+.btn-copy {
+  background: none;
+  border: 1px solid #555;
+  color: #aaa;
+}
+.btn-copy:hover {
+  background: #222;
+  color: #d4af37;
+  border-color: #d4af37;
+}
+
+/* ── ALUGUEL DE CARRO — blocos de retirada/devolução no formulário ── */
+.aluguel-bloco {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: rgba(90, 175, 90, 0.05);
+  border: 1px solid #2a4a2a;
+  border-radius: 6px;
+}
+.aluguel-bloco-titulo {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6abf6a;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* ── ALUGUEL DE CARRO — preview ── */
+.prev-aluguel {
+  margin: 8px 0;
+}
+.prev-aluguel-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.prev-aluguel-bloco {
+  flex: 1;
+}
+.prev-aluguel-seta {
+  font-size: 22px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.prev-aluguel-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: #5aaf5a;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.prev-aluguel-local {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+.prev-aluguel-data {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}

@@ -299,21 +299,21 @@ export const novoTrecho = (tipo = 'IDA') => ({
 // ── NOVO: Trecho de Carro ─────────────────────────────────────────────────────
 export const novoCarro = (tipo = 'TRANSFER') => ({
   id: uid(),
-  moduloTipo: 'carro',  // distingue do trecho aéreo
-  tipo,                  // 'TRANSFER' | 'ALUGUEL' | 'UBER' | 'OUTRO'
+  moduloTipo: 'carro',
+  tipo,
   origem: '',
   destino: '',
   data: '',
+  dataFim: '',           // ALUGUEL: data de devolução
   horaSaida: '',
   horaChegada: '',
-  distanciaKm: '',
   duracaoEstimada: '',
-  empresa: '',           // empresa de aluguel / app
-  confirmacao: '',       // código de confirmação
-  motorista: '',         // nome do motorista (transfer)
-  veiculo: '',           // modelo/placa
+  empresa: '',
+  confirmacao: '',
+  motorista: '',
+  veiculo: '',
   obs: '',
-  hospedagens: [],       // igual ao trecho aéreo
+  hospedagens: [],
 });
 
 export const novaHosp = () => ({
