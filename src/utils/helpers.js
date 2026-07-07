@@ -263,8 +263,12 @@ export const mascaraTelefone = (value) => {
   return value;
 };
 
+// ── NOVO: cada trecho passa a ter `moduloTipo: 'voo'` para poder conviver
+// no mesmo array que os trechos de carro (`moduloTipo: 'carro'`), permitindo
+// intercalar livremente voos e trechos terrestres na ordem real da viagem.
 export const novoTrecho = (tipo = 'IDA') => ({
   id: uid(),
+  moduloTipo: 'voo',
   tipo,
   origemCod: '',
   destinoCod: '',
@@ -296,7 +300,7 @@ export const novoTrecho = (tipo = 'IDA') => ({
   hospedagens: [],
 });
 
-// ── NOVO: Trecho de Carro ─────────────────────────────────────────────────────
+// ── Trecho de Carro ─────────────────────────────────────────────────────
 export const novoCarro = (tipo = 'TRANSFER') => ({
   id: uid(),
   moduloTipo: 'carro',
@@ -405,6 +409,9 @@ export const TIPOS_CARRO = [
   { value: 'OUTRO',    label: '🛣️ Outro' },
 ];
 
+// ── Validação/limpeza do localStorage ─────────────────────────────────────
+// Aceita tanto o formato novo (`segmentos`) quanto o legado (`trechos` + `carros`),
+// para não apagar dados de usuários que ainda não passaram pela migração.
 export const limparLocalStorageCorrompido = () => {
   try {
     const s = localStorage.getItem('gvs_itinerario');
@@ -413,8 +420,14 @@ export const limparLocalStorageCorrompido = () => {
       if (!parsed || typeof parsed !== 'object') { localStorage.removeItem('gvs_itinerario'); return true; }
       if (!Array.isArray(parsed.nomes))      { localStorage.removeItem('gvs_itinerario'); return true; }
       if (!Array.isArray(parsed.ingressos))  { localStorage.removeItem('gvs_itinerario'); return true; }
-      if (!Array.isArray(parsed.trechos))    { localStorage.removeItem('gvs_itinerario'); return true; }
       if (!Array.isArray(parsed.hospedagens)){ localStorage.removeItem('gvs_itinerario'); return true; }
+
+      const temFormatoNovo = Array.isArray(parsed.segmentos);
+      const temFormatoLegado = Array.isArray(parsed.trechos);
+      if (!temFormatoNovo && !temFormatoLegado) {
+        localStorage.removeItem('gvs_itinerario');
+        return true;
+      }
     }
   } catch (e) {
     localStorage.removeItem('gvs_itinerario');

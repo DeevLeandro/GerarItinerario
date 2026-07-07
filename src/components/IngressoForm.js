@@ -1,6 +1,6 @@
 import React from 'react';
 
-const IngressoForm = ({ ingresso, onChange, onRemove, idx }) => {
+const IngressoForm = ({ ingresso, onChange, onRemove, onDuplicate, idx }) => {
   // Se ingresso for undefined, retorna null ou um fallback
   if (!ingresso) {
     console.warn('IngressoForm recebeu ingresso undefined');
@@ -19,11 +19,20 @@ const IngressoForm = ({ ingresso, onChange, onRemove, idx }) => {
     }
   };
 
+  const handleDuplicate = () => {
+    if (onDuplicate) {
+      onDuplicate();
+    }
+  };
+
   return (
     <div className="ingresso-card">
       <div className="ingresso-header">
         <span>🎟️ Ingresso/Passeio #{idx + 1}</span>
-        <button className="btn-remove" onClick={handleRemove}>Remover</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {onDuplicate && <button className="btn-duplicate" onClick={handleDuplicate}>📋 Duplicar</button>}
+          <button className="btn-remove" onClick={handleRemove}>Remover</button>
+        </div>
       </div>
       <div className="field-group full">
         <div className="field-wrap">

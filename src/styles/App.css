@@ -220,6 +220,38 @@ body {
   flex: 0 0 20px;
 }
 
+/* SECTION HEADER — linha com o section-label + ação (ex: botão "Ordenar por data") */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.section-header .section-label {
+  flex: 1;
+  margin: 0;
+}
+
+.btn-sort {
+  background: none;
+  border: 1px solid var(--gold);
+  color: var(--gold2);
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-sort:hover {
+  background: #1a1608;
+}
+
 /* FORM FIELDS - RESPONSIVO */
 .field-group {
   display: grid;
@@ -1322,4 +1354,61 @@ body {
   page-break-inside: avoid;
   orphans: 3;
   widows: 3;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   NOVO: SEGMENTOS UNIFICADOS (voos + carros intercaláveis) — reordenação
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Envolve cada segmento (voo ou carro) + sua barrinha de reordenação */
+.segmento-wrapper {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+/* Barra com as setas ▲▼ e a posição do item na sequência da viagem */
+.segmento-reorder-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding: 2px 2px 2px 4px;
+}
+
+.segmento-posicao {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #666;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+
+.btn-move {
+  background: none;
+  border: 1px solid #444;
+  color: var(--gold2);
+  width: 24px;
+  height: 22px;
+  line-height: 1;
+  font-size: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-move:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: #1a1608;
+}
+
+.btn-move:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
 }

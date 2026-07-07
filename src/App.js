@@ -10,7 +10,7 @@ import PreviewIngresso from './components/PreviewIngresso';
 import PreviewHospedagem from './components/PreviewHospedagem';
 import Toast from './components/Toast';
 import {
-  novoTrecho, novoCarro, novaHosp, novoIngresso, fmtDate,
+  uid, novoTrecho, novoCarro, novaHosp, novoIngresso, fmtDate,
   LOGO_URL, limparLocalStorageCorrompido,
   calcularDuracaoVoo, calcularDuracaoViagem,
   validarCodigoAeroporto, validarDatas, notasGlobais
@@ -24,6 +24,33 @@ function App() {
       const s = localStorage.getItem('gvs_itinerario');
       if (s) {
         const parsed = JSON.parse(s);
+
+        // ── Migração: formato novo (segmentos) ou legado (trechos + carros) ──
+        let segmentos;
+        if (Array.isArray(parsed.segmentos)) {
+          segmentos = parsed.segmentos.map(seg => ({
+            ...seg,
+            hospedagens: seg.hospedagens || [],
+          }));
+        } else {
+          const trechosAntigos = (parsed.trechos || []).map(t => ({
+            ...t,
+            moduloTipo: 'voo',
+            hospedagens: t.hospedagens || [],
+            tzOrigem: t.tzOrigem || '',
+            tzDestino: t.tzDestino || '',
+          }));
+          const carrosAntigos = (parsed.carros || []).map(c => ({
+            ...c,
+            moduloTipo: 'carro',
+            hospedagens: c.hospedagens || [],
+          }));
+          // Não temos como recuperar a ordem cronológica real de dados antigos,
+          // então mantemos a única ordem que existia: voos primeiro, depois carros.
+          // A partir de agora, a ordem de inserção/reordenação manual é preservada.
+          segmentos = [...trechosAntigos, ...carrosAntigos];
+        }
+
         return {
           nomes:           parsed.nomes || [''],
           consultor:       parsed.consultor || 'Guilherme Vieira dos Santos',
@@ -33,17 +60,7 @@ function App() {
           dataIda:         parsed.dataIda || '',
           dataVolta:       parsed.dataVolta || '',
           tipos:           parsed.tipos || ['Aéreos'],
-          trechos: (parsed.trechos || []).map(t => ({
-            ...t,
-            hospedagens: t.hospedagens || [],
-            tzOrigem: t.tzOrigem || '',
-            tzDestino: t.tzDestino || '',
-          })),
-          // Trechos de CARRO (novo array separado)
-          carros: (parsed.carros || []).map(c => ({
-            ...c,
-            hospedagens: c.hospedagens || [],
-          })),
+          segmentos,
           hospedagens:     parsed.hospedagens || [],
           ingressos:       parsed.ingressos || [],
           notasGerais:     parsed.notasGerais || notasGlobais,
@@ -61,8 +78,7 @@ function App() {
       cargo: 'Gestor de Milhas',
       origem: '', destino: '', dataIda: '', dataVolta: '',
       tipos: ['Aéreos'],
-      trechos: [{ ...novoTrecho('IDA'), hospedagens: [] }],
-      carros: [],
+      segmentos: [{ ...novoTrecho('IDA'), hospedagens: [] }],
       hospedagens: [], ingressos: [],
       notasGerais: notasGlobais,
       imagemDestino: '', logoPersonalizado: '', tema: 'light',
@@ -95,61 +111,76 @@ function App() {
       showToast('A data de ida não pode ser posterior à data de volta!', 'error');
       return false;
     }
-    for (const trecho of form.trechos) {
-      if (trecho.origemCod && !validarCodigoAeroporto(trecho.origemCod)) {
-        showToast(`Código de aeroporto inválido: ${trecho.origemCod}`, 'error');
+    for (const seg of (form.segmentos || [])) {
+      if (seg.moduloTipo !== 'carro' && seg.origemCod && !validarCodigoAeroporto(seg.origemCod)) {
+        showToast(`Código de aeroporto inválido: ${seg.origemCod}`, 'error');
         return false;
       }
     }
     return true;
   };
 
-  // ── Trechos aéreos ────────────────────────────────────────────────────────
-  const addTrecho = (tipo) => u('trechos', [...form.trechos, { ...novoTrecho(tipo), hospedagens: [] }]);
-  const updTrecho = (id, data) => u('trechos', form.trechos.map(t => t.id === id ? { ...data, hospedagens: data.hospedagens || t.hospedagens || [] } : t));
-  const remTrecho = (id) => u('trechos', form.trechos.filter(t => t.id !== id));
-  const duplicateTrecho = (trecho) => {
-    u('trechos', [...form.trechos, { ...trecho, id: Math.random().toString(36).substr(2, 9), hospedagens: [] }]);
-    showToast('Trecho duplicado!');
+  // ── SEGMENTOS (voos e carros, unificados e reordenáveis) ─────────────────
+  const addSegmentoVoo = (tipo) => u('segmentos', [...(form.segmentos || []), { ...novoTrecho(tipo), hospedagens: [] }]);
+  const addSegmentoCarro = (tipo = 'TRANSFER') => u('segmentos', [...(form.segmentos || []), { ...novoCarro(tipo), hospedagens: [] }]);
+
+  const updSegmento = (id, data) => u('segmentos', (form.segmentos || []).map(s =>
+    s.id === id ? { ...data, hospedagens: data.hospedagens || s.hospedagens || [] } : s
+  ));
+  const remSegmento = (id) => u('segmentos', (form.segmentos || []).filter(s => s.id !== id));
+  const dupSegmento = (seg) => {
+    u('segmentos', [...(form.segmentos || []), { ...seg, id: uid(), hospedagens: [] }]);
+    showToast('Segmento duplicado!');
   };
-  const ordenarTrechosPorData = () => {
-    const sorted = [...form.trechos].sort((a, b) => {
+
+  // Move um segmento para cima (-1) ou para baixo (+1) na lista.
+  // É isso que permite intercalar voo/hotel/carro na ordem real da viagem.
+  const moveSegmento = (id, dir) => {
+    const arr = [...(form.segmentos || [])];
+    const idx = arr.findIndex(s => s.id === id);
+    const novoIdx = idx + dir;
+    if (idx === -1 || novoIdx < 0 || novoIdx >= arr.length) return;
+    [arr[idx], arr[novoIdx]] = [arr[novoIdx], arr[idx]];
+    u('segmentos', arr);
+  };
+
+  const ordenarSegmentosPorData = () => {
+    const sorted = [...(form.segmentos || [])].sort((a, b) => {
       if (!a.data) return 1; if (!b.data) return -1;
       return new Date(a.data) - new Date(b.data);
     });
-    u('trechos', sorted);
-    showToast('Trechos ordenados por data!');
+    u('segmentos', sorted);
+    showToast('Itinerário ordenado por data!');
   };
 
-  // Hospedagens vinculadas ao trecho aéreo
-  const addHospTrecho    = (tid) => u('trechos', form.trechos.map(t => t.id !== tid ? t : { ...t, hospedagens: [...(t.hospedagens || []), novaHosp()] }));
-  const updHospTrecho    = (tid, hid, data) => u('trechos', form.trechos.map(t => t.id !== tid ? t : { ...t, hospedagens: (t.hospedagens || []).map(h => h.id === hid ? data : h) }));
-  const remHospTrecho    = (tid, hid) => u('trechos', form.trechos.map(t => t.id !== tid ? t : { ...t, hospedagens: (t.hospedagens || []).filter(h => h.id !== hid) }));
-  const dupHospTrecho    = (tid, hosp) => { u('trechos', form.trechos.map(t => t.id !== tid ? t : { ...t, hospedagens: [...(t.hospedagens || []), { ...hosp, id: Math.random().toString(36).substr(2, 9) }] })); showToast('Hospedagem duplicada!'); };
+  // Hospedagens vinculadas a qualquer segmento (voo OU carro) — lógica genérica
+  const addHospSegmento = (segId) => u('segmentos', (form.segmentos || []).map(s =>
+    s.id !== segId ? s : { ...s, hospedagens: [...(s.hospedagens || []), novaHosp()] }
+  ));
+  const updHospSegmento = (segId, hid, data) => u('segmentos', (form.segmentos || []).map(s =>
+    s.id !== segId ? s : { ...s, hospedagens: (s.hospedagens || []).map(h => h.id === hid ? data : h) }
+  ));
+  const remHospSegmento = (segId, hid) => u('segmentos', (form.segmentos || []).map(s =>
+    s.id !== segId ? s : { ...s, hospedagens: (s.hospedagens || []).filter(h => h.id !== hid) }
+  ));
+  const dupHospSegmento = (segId, hosp) => {
+    u('segmentos', (form.segmentos || []).map(s =>
+      s.id !== segId ? s : { ...s, hospedagens: [...(s.hospedagens || []), { ...hosp, id: uid() }] }
+    ));
+    showToast('Hospedagem duplicada!');
+  };
 
-  // ── Trechos de CARRO ──────────────────────────────────────────────────────
-  const addCarro = (tipo = 'TRANSFER') => u('carros', [...(form.carros || []), { ...novoCarro(tipo), hospedagens: [] }]);
-  const updCarro = (id, data) => u('carros', (form.carros || []).map(c => c.id === id ? { ...data, hospedagens: data.hospedagens || c.hospedagens || [] } : c));
-  const remCarro = (id) => u('carros', (form.carros || []).filter(c => c.id !== id));
-  const dupCarro = (carro) => { u('carros', [...(form.carros || []), { ...carro, id: Math.random().toString(36).substr(2, 9), hospedagens: [] }]); showToast('Trecho duplicado!'); };
-
-  // Hospedagens vinculadas ao carro
-  const addHospCarro    = (cid) => u('carros', (form.carros || []).map(c => c.id !== cid ? c : { ...c, hospedagens: [...(c.hospedagens || []), novaHosp()] }));
-  const updHospCarro    = (cid, hid, data) => u('carros', (form.carros || []).map(c => c.id !== cid ? c : { ...c, hospedagens: (c.hospedagens || []).map(h => h.id === hid ? data : h) }));
-  const remHospCarro    = (cid, hid) => u('carros', (form.carros || []).map(c => c.id !== cid ? c : { ...c, hospedagens: (c.hospedagens || []).filter(h => h.id !== hid) }));
-  const dupHospCarro    = (cid, hosp) => { u('carros', (form.carros || []).map(c => c.id !== cid ? c : { ...c, hospedagens: [...(c.hospedagens || []), { ...hosp, id: Math.random().toString(36).substr(2, 9) }] })); showToast('Hospedagem duplicada!'); };
-
-  // ── Hospedagens globais ───────────────────────────────────────────────────
+  // ── Hospedagens globais (sem voo/carro vinculado) ─────────────────────────
   const addHosp = () => u('hospedagens', [...form.hospedagens, novaHosp()]);
   const updHosp = (id, data) => u('hospedagens', form.hospedagens.map(h => h.id === id ? data : h));
   const remHosp = (id) => u('hospedagens', form.hospedagens.filter(h => h.id !== id));
-  const dupHosp = (hosp) => { u('hospedagens', [...form.hospedagens, { ...hosp, id: Math.random().toString(36).substr(2, 9) }]); showToast('Hospedagem duplicada!'); };
+  const dupHosp = (hosp) => { u('hospedagens', [...form.hospedagens, { ...hosp, id: uid() }]); showToast('Hospedagem duplicada!'); };
 
   // ── Ingressos ─────────────────────────────────────────────────────────────
   const addIngresso    = () => u('ingressos', [...form.ingressos, novoIngresso()]);
   const updIngresso    = (id, data) => u('ingressos', form.ingressos.map(i => i.id === id ? data : i));
   const remIngresso    = (id) => u('ingressos', form.ingressos.filter(i => i.id !== id));
-  const dupIngresso    = (ing) => { u('ingressos', [...form.ingressos, { ...ing, id: Math.random().toString(36).substr(2, 9) }]); showToast('Ingresso duplicado!'); };
+  const dupIngresso    = (ing) => { u('ingressos', [...form.ingressos, { ...ing, id: uid() }]); showToast('Ingresso duplicado!'); };
 
   // ── Nomes ─────────────────────────────────────────────────────────────────
   const updNome = (i, v) => { const n = [...form.nomes]; n[i] = v; u('nomes', n); };
@@ -191,31 +222,37 @@ function App() {
 
   const copiarResumo = () => {
     const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
-    const hospVinculadas = form.trechos.reduce((acc, t) => acc + (t.hospedagens || []).length, 0)
-      + (form.carros || []).reduce((acc, c) => acc + (c.hospedagens || []).length, 0);
+    const segmentos = form.segmentos || [];
+    const totalVoos = segmentos.filter(s => s.moduloTipo !== 'carro').length;
+    const totalCarros = segmentos.filter(s => s.moduloTipo === 'carro').length;
+    const hospVinculadas = segmentos.reduce((acc, s) => acc + (s.hospedagens || []).length, 0);
     const totalHosp = hospVinculadas + form.hospedagens.length;
-    const resumo = `✈️ RESUMO DA VIAGEM - GVS\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📍 Destino: ${form.destino || 'Não informado'}\n📅 Período: ${fmtDate(form.dataIda) || '—'} a ${fmtDate(form.dataVolta) || '—'}\n⏱ Duração: ${totalDias} dias\n\n📊 ESTATÍSTICAS:\n• ${form.trechos.length} voo(s)\n• ${(form.carros || []).length} trecho(s) terrestre(s)\n• ${totalHosp} hospedagem(ns)\n• ${form.ingressos.length} ingresso(s)\n\n👤 Passageiro(s): ${form.nomes.filter(Boolean).join(', ')}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\nEmitido por: ${form.consultor}\nData: ${new Date().toLocaleDateString('pt-BR')}`;
+    const resumo = `✈️ RESUMO DA VIAGEM - GVS\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📍 Destino: ${form.destino || 'Não informado'}\n📅 Período: ${fmtDate(form.dataIda) || '—'} a ${fmtDate(form.dataVolta) || '—'}\n⏱ Duração: ${totalDias} dias\n\n📊 ESTATÍSTICAS:\n• ${totalVoos} voo(s)\n• ${totalCarros} trecho(s) terrestre(s)\n• ${totalHosp} hospedagem(ns)\n• ${form.ingressos.length} ingresso(s)\n\n👤 Passageiro(s): ${form.nomes.filter(Boolean).join(', ')}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\nEmitido por: ${form.consultor}\nData: ${new Date().toLocaleDateString('pt-BR')}`;
     navigator.clipboard.writeText(resumo);
     showToast('Resumo copiado!', 'success');
   };
 
   const exportarWhatsApp = () => {
     const nomes = form.nomes.filter(Boolean).join(', ');
-    const trechosMsg = form.trechos.map(t => {
-      const duracao = calcularDuracaoVoo(t.horaSaida, t.horaChegada);
-      let linha = `✈️ *${t.tipo}*: ${t.origemCod || '???'} → ${t.destinoCod || '???'}\n   📅 ${fmtDate(t.data)} • ${t.horaSaida || '--:--'} → ${t.horaChegada || '--:--'} (${duracao})\n   🏢 ${t.cia} ${t.numVoo}`;
-      (t.hospedagens || []).forEach(h => {
+    const segmentos = form.segmentos || [];
+
+    // Mantém a ordem exata em que você organizou o itinerário (voo/hotel/carro intercalados)
+    const segmentosMsg = segmentos.map(seg => {
+      let linha;
+      if (seg.moduloTipo === 'carro') {
+        linha = `🚗 *${seg.tipo}*: ${seg.origem || '???'} → ${seg.destino || '???'}\n   📅 ${fmtDate(seg.data)} • ${seg.horaSaida || '--:--'}${seg.empresa ? ` • ${seg.empresa}` : ''}`;
+      } else {
+        const duracao = calcularDuracaoVoo(seg.horaSaida, seg.horaChegada);
+        linha = `✈️ *${seg.tipo}*: ${seg.origemCod || '???'} → ${seg.destinoCod || '???'}\n   📅 ${fmtDate(seg.data)} • ${seg.horaSaida || '--:--'} → ${seg.horaChegada || '--:--'} (${duracao})\n   🏢 ${seg.cia} ${seg.numVoo}`;
+      }
+      (seg.hospedagens || []).forEach(h => {
         linha += `\n   🏨 ${h.hotel || 'Hotel'} • Check-in: ${fmtDate(h.inicio)} • Check-out: ${fmtDate(h.fim)}`;
       });
       return linha;
     }).join('\n\n');
 
-    const carrosMsg = (form.carros || []).map(c => {
-      return `🚗 *${c.tipo}*: ${c.origem || '???'} → ${c.destino || '???'}\n   📅 ${fmtDate(c.data)} • ${c.horaSaida || '--:--'}${c.empresa ? ` • ${c.empresa}` : ''}`;
-    }).join('\n\n');
-
     const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
-    const msg = `✈️ *ITINERÁRIO GVS - ${form.destino || 'Destino'}* ✈️\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📅 *Período:* ${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)} (${totalDias} dias)\n👤 *Passageiro(s):* ${nomes}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\n*✈️ VOOS*\n${trechosMsg}\n\n${carrosMsg ? `━━━━━━━━━━━━━━━━━━━━━━━━━\n*🚗 TRANSFERS/TERRESTRES*\n${carrosMsg}\n\n` : ''}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n*Consultor:* ${form.consultor}\n*Emissão:* ${new Date().toLocaleDateString('pt-BR')}`;
+    const msg = `✈️ *ITINERÁRIO GVS - ${form.destino || 'Destino'}* ✈️\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📅 *Período:* ${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)} (${totalDias} dias)\n👤 *Passageiro(s):* ${nomes}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\n*🧭 ITINERÁRIO*\n${segmentosMsg}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\n*Consultor:* ${form.consultor}\n*Emissão:* ${new Date().toLocaleDateString('pt-BR')}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     showToast('Mensagem preparada para WhatsApp!', 'success');
   };
@@ -225,18 +262,20 @@ function App() {
     const novo = {
       nomes: [''], consultor: 'Guilherme Vieira dos Santos', cargo: 'Gestor de Milhas',
       origem: '', destino: '', dataIda: '', dataVolta: '', tipos: ['Aéreos'],
-      trechos: [{ ...novoTrecho('IDA'), hospedagens: [] }],
-      carros: [], hospedagens: [], ingressos: [],
+      segmentos: [{ ...novoTrecho('IDA'), hospedagens: [] }],
+      hospedagens: [], ingressos: [],
       notasGerais: notasGlobais, imagemDestino: '', logoPersonalizado: '', tema: 'light',
     };
     setForm(novo);
     showToast('Dados limpos com sucesso!', 'success');
   };
 
-  // Métricas
+  // Métricas (baseadas no array unificado de segmentos)
+  const segmentos = form.segmentos || [];
+  const totalVoos = segmentos.filter(s => s.moduloTipo !== 'carro').length;
+  const totalCarros = segmentos.filter(s => s.moduloTipo === 'carro').length;
   const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
-  const hospVinculadas = form.trechos.reduce((acc, t) => acc + (t.hospedagens || []).length, 0)
-    + (form.carros || []).reduce((acc, c) => acc + (c.hospedagens || []).length, 0);
+  const hospVinculadas = segmentos.reduce((acc, s) => acc + (s.hospedagens || []).length, 0);
   const totalHospedagens = hospVinculadas + form.hospedagens.length;
   const tituloViagem = [form.destino, form.dataIda && form.dataVolta ? `${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)}` : ''].filter(Boolean).join(' • ');
 
@@ -339,85 +378,101 @@ function App() {
             </div>
           </div>
 
-          {/* ══ TRECHOS AÉREOS ══ */}
+          {/* ══ ITINERÁRIO UNIFICADO (voos + carros, na ordem real da viagem) ══ */}
           <div className="section-header">
-            <div className="section-label">Trechos de Voo</div>
-            {form.trechos.length > 1 && (
-              <button className="btn-sort" onClick={ordenarTrechosPorData}>📅 Ordenar por data</button>
+            <div className="section-label">🧭 Itinerário (Voos e Terrestres)</div>
+            {segmentos.length > 1 && (
+              <button className="btn-sort" onClick={ordenarSegmentosPorData}>📅 Ordenar por data</button>
             )}
           </div>
 
-          {form.trechos.map((t, i) => (
-            <div key={t.id} className="trecho-bloco">
-              <TrechoForm
-                trecho={t}
-                idx={i}
-                onChange={data => updTrecho(t.id, data)}
-                onRemove={() => remTrecho(t.id)}
-                onDuplicate={() => duplicateTrecho(t)}
-              />
-              {(t.hospedagens || []).length > 0 && (
-                <div className="hospedagens-vinculadas">
-                  <div className="hospedagens-vinculadas-label">
-                    <span className="hv-icon">🏨</span>
-                    Hospedagem após este voo
-                    <div className="hv-linha" />
-                  </div>
-                  {(t.hospedagens || []).map((h, hi) => (
-                    <HospedagemForm
-                      key={h.id} hosp={h} idx={hi}
-                      onChange={data => updHospTrecho(t.id, h.id, data)}
-                      onRemove={() => remHospTrecho(t.id, h.id)}
-                      onDuplicate={() => dupHospTrecho(t.id, h)}
-                    />
-                  ))}
+          <div style={{ fontSize: 11, color: '#888', margin: '-4px 0 12px', lineHeight: 1.4 }}>
+            💡 Lance voos e trechos terrestres na ordem que quiser — use as setas ▲▼ de cada item
+            para reorganizar a sequência cronológica real da viagem (ex: voo → hotel → voo → carro → voo de volta).
+          </div>
+
+          {segmentos.map((seg, i) => (
+            <div key={seg.id} className="segmento-wrapper">
+              <div className="segmento-reorder-bar">
+                <button
+                  className="btn-move"
+                  disabled={i === 0}
+                  onClick={() => moveSegmento(seg.id, -1)}
+                  title="Mover para cima"
+                >▲</button>
+                <span className="segmento-posicao">#{i + 1}</span>
+                <button
+                  className="btn-move"
+                  disabled={i === segmentos.length - 1}
+                  onClick={() => moveSegmento(seg.id, 1)}
+                  title="Mover para baixo"
+                >▼</button>
+              </div>
+
+              {seg.moduloTipo === 'carro' ? (
+                <CarroForm
+                  carro={seg}
+                  idx={i}
+                  onChange={data => updSegmento(seg.id, data)}
+                  onRemove={() => remSegmento(seg.id)}
+                  onDuplicate={() => dupSegmento(seg)}
+                  onAddHosp={addHospSegmento}
+                  onUpdHosp={updHospSegmento}
+                  onRemHosp={remHospSegmento}
+                  onDuplicateHosp={dupHospSegmento}
+                />
+              ) : (
+                <div className="trecho-bloco">
+                  <TrechoForm
+                    trecho={seg}
+                    idx={i}
+                    onChange={data => updSegmento(seg.id, data)}
+                    onRemove={() => remSegmento(seg.id)}
+                    onDuplicate={() => dupSegmento(seg)}
+                  />
+                  {(seg.hospedagens || []).length > 0 && (
+                    <div className="hospedagens-vinculadas">
+                      <div className="hospedagens-vinculadas-label">
+                        <span className="hv-icon">🏨</span>
+                        Hospedagem após este voo
+                        <div className="hv-linha" />
+                      </div>
+                      {(seg.hospedagens || []).map((h, hi) => (
+                        <HospedagemForm
+                          key={h.id} hosp={h} idx={hi}
+                          onChange={data => updHospSegmento(seg.id, h.id, data)}
+                          onRemove={() => remHospSegmento(seg.id, h.id)}
+                          onDuplicate={() => dupHospSegmento(seg.id, h)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <button className="btn-add-hosp-trecho" onClick={() => addHospSegmento(seg.id)}>
+                    🏨 Adicionar hospedagem após este voo
+                  </button>
                 </div>
               )}
-              <button className="btn-add-hosp-trecho" onClick={() => addHospTrecho(t.id)}>
-                🏨 Adicionar hospedagem após este voo
-              </button>
             </div>
           ))}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn-add" onClick={() => addTrecho('IDA')}>+ Trecho de Ida</button>
-            <button className="btn-add" onClick={() => addTrecho('VOLTA')}>+ Trecho de Volta</button>
-          </div>
-
-          {/* ══ TRECHOS TERRESTRES (CARRO) ══ */}
-          <div className="section-label" style={{ marginTop: 20 }}>
-            🚗 Trechos Terrestres
-          </div>
-          {(form.carros || []).map((c, i) => (
-            <CarroForm
-              key={c.id}
-              carro={c}
-              idx={i}
-              onChange={data => updCarro(c.id, data)}
-              onRemove={() => remCarro(c.id)}
-              onDuplicate={() => dupCarro(c)}
-              onAddHosp={addHospCarro}
-              onUpdHosp={updHospCarro}
-              onRemHosp={remHospCarro}
-              onDuplicateHosp={dupHospCarro}
-            />
-          ))}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addCarro('TRANSFER')}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+            <button className="btn-add" onClick={() => addSegmentoVoo('IDA')}>✈️ + Voo de Ida</button>
+            <button className="btn-add" onClick={() => addSegmentoVoo('VOLTA')}>✈️ + Voo de Volta</button>
+            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addSegmentoCarro('TRANSFER')}>
               🚐 + Transfer
             </button>
-            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addCarro('ALUGUEL')}>
+            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addSegmentoCarro('ALUGUEL')}>
               🚗 + Aluguel de Carro
             </button>
-            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addCarro('UBER')}>
+            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addSegmentoCarro('UBER')}>
               📱 + Uber / App
             </button>
-            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addCarro('ONIBUS')}>
+            <button className="btn-add" style={{ background: '#1a2a1a', borderColor: '#3a6a3a', color: '#6abf6a' }} onClick={() => addSegmentoCarro('ONIBUS')}>
               🚌 + Ônibus / Van
             </button>
           </div>
 
-          {/* HOSPEDAGENS GLOBAIS */}
+          {/* HOSPEDAGENS GLOBAIS (sem voo/carro vinculado) */}
           {form.hospedagens.length > 0 && (
             <>
               <div className="section-label" style={{ marginTop: 16 }}>Hospedagem Avulsa</div>
@@ -532,21 +587,19 @@ function App() {
                 </div>
               </div>
 
-              {/* ITINERÁRIO CRONOLÓGICO */}
-              {(form.trechos.length > 0 || (form.carros || []).length > 0) && (
+              {/* ITINERÁRIO CRONOLÓGICO — segue exatamente a ordem definida no formulário */}
+              {segmentos.length > 0 && (
                 <div className="prev-section">
                   <div className="prev-section-title">Itinerário</div>
-
-                  {/* Voos */}
-                  {form.trechos.map((t, i) => (
-                    <div key={t.id} className="prev-trecho-bloco">
+                  {segmentos.map((seg, i) => (
+                    <div key={seg.id} className="prev-trecho-bloco">
                       {i > 0 && <div className="prev-cronologia-conector" />}
                       <div className="prev-cronologia-voo">
-                        <PreviewTrecho t={t} />
+                        {seg.moduloTipo === 'carro' ? <PreviewCarro c={seg} /> : <PreviewTrecho t={seg} />}
                       </div>
-                      {(t.hospedagens || []).length > 0 && (
+                      {(seg.hospedagens || []).length > 0 && (
                         <div className="prev-cronologia-hosps">
-                          {(t.hospedagens || []).map(h => (
+                          {(seg.hospedagens || []).map(h => (
                             <div key={h.id} className="prev-cronologia-hosp-item">
                               <div className="prev-cronologia-hosp-badge">🏨 Hospedagem</div>
                               <PreviewHospedagem h={h} />
@@ -556,31 +609,6 @@ function App() {
                       )}
                     </div>
                   ))}
-
-                  {/* Terrestres */}
-                  {(form.carros || []).length > 0 && (
-                    <>
-                      {form.trechos.length > 0 && <div className="prev-cronologia-conector" />}
-                      {(form.carros || []).map((c, i) => (
-                        <div key={c.id} className="prev-trecho-bloco">
-                          {i > 0 && <div className="prev-cronologia-conector" />}
-                          <div className="prev-cronologia-voo">
-                            <PreviewCarro c={c} />
-                          </div>
-                          {(c.hospedagens || []).length > 0 && (
-                            <div className="prev-cronologia-hosps">
-                              {(c.hospedagens || []).map(h => (
-                                <div key={h.id} className="prev-cronologia-hosp-item">
-                                  <div className="prev-cronologia-hosp-badge">🏨 Hospedagem</div>
-                                  <PreviewHospedagem h={h} />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  )}
                 </div>
               )}
 
@@ -631,8 +659,8 @@ function App() {
                     <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 600, color: '#b8960c', marginBottom: 4 }}>📊 RESUMO DA VIAGEM</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px', fontSize: 10 }}>
                       <span style={{ color: '#666' }}>📅 Duração:</span><span style={{ fontWeight: 600, color: '#333' }}>{totalDias} dias</span>
-                      <span style={{ color: '#666' }}>✈️ Voos:</span><span style={{ fontWeight: 600, color: '#333' }}>{form.trechos.length}</span>
-                      <span style={{ color: '#666' }}>🚗 Terrestres:</span><span style={{ fontWeight: 600, color: '#333' }}>{(form.carros || []).length}</span>
+                      <span style={{ color: '#666' }}>✈️ Voos:</span><span style={{ fontWeight: 600, color: '#333' }}>{totalVoos}</span>
+                      <span style={{ color: '#666' }}>🚗 Terrestres:</span><span style={{ fontWeight: 600, color: '#333' }}>{totalCarros}</span>
                       <span style={{ color: '#666' }}>🏨 Hospedagens:</span><span style={{ fontWeight: 600, color: '#333' }}>{totalHospedagens}</span>
                       <span style={{ color: '#666' }}>🎟️ Ingressos:</span><span style={{ fontWeight: 600, color: '#333' }}>{form.ingressos.length}</span>
                     </div>
@@ -644,7 +672,7 @@ function App() {
             {/* FOOTER */}
             <div className="prev-footer">
               <div className="prev-footer-txt">
-                GVS <span>•</span> Guilherme Vieira Santos <span>•</span> Gestor de Milhas
+                GVS <span>•</span> Guilherme Vieira dos Santos <span>•</span> Gestor de Milhas
                 <span style={{ float: 'right' }}>Página 1/1 • Emitido em {new Date().toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
