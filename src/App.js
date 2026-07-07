@@ -61,6 +61,8 @@ function App() {
           dataVolta:       parsed.dataVolta || '',
           tipos:           parsed.tipos || ['Aéreos'],
           segmentos,
+          // Trechos avulsos: voos FORA da timeline cronológica, sem hospedagem vinculada.
+          trechosAvulsos:  (parsed.trechosAvulsos || []).map(t => ({ ...t, moduloTipo: 'voo' })),
           hospedagens:     parsed.hospedagens || [],
           ingressos:       parsed.ingressos || [],
           notasGerais:     parsed.notasGerais || notasGlobais,
@@ -79,6 +81,7 @@ function App() {
       origem: '', destino: '', dataIda: '', dataVolta: '',
       tipos: ['Aéreos'],
       segmentos: [{ ...novoTrecho('IDA'), hospedagens: [] }],
+      trechosAvulsos: [],
       hospedagens: [], ingressos: [],
       notasGerais: notasGlobais,
       imagemDestino: '', logoPersonalizado: '', tema: 'light',
@@ -114,6 +117,12 @@ function App() {
     for (const seg of (form.segmentos || [])) {
       if (seg.moduloTipo !== 'carro' && seg.origemCod && !validarCodigoAeroporto(seg.origemCod)) {
         showToast(`Código de aeroporto inválido: ${seg.origemCod}`, 'error');
+        return false;
+      }
+    }
+    for (const t of (form.trechosAvulsos || [])) {
+      if (t.origemCod && !validarCodigoAeroporto(t.origemCod)) {
+        showToast(`Código de aeroporto inválido: ${t.origemCod}`, 'error');
         return false;
       }
     }
@@ -170,6 +179,18 @@ function App() {
     showToast('Hospedagem duplicada!');
   };
 
+  // ── TRECHOS AVULSOS ────────────────────────────────────────────────────────
+  // Voos que existem FORA da timeline cronológica principal, sem hospedagem
+  // vinculada por definição — espelha o comportamento de "Hospedagem Avulsa".
+  // ⚠️ Não participam da ordem reordenável de `segmentos` nem do PDF cronológico.
+  const addTrechoAvulso = (tipo = 'IDA') => u('trechosAvulsos', [...(form.trechosAvulsos || []), novoTrecho(tipo)]);
+  const updTrechoAvulso = (id, data) => u('trechosAvulsos', (form.trechosAvulsos || []).map(t => t.id === id ? data : t));
+  const remTrechoAvulso = (id) => u('trechosAvulsos', (form.trechosAvulsos || []).filter(t => t.id !== id));
+  const dupTrechoAvulso = (t) => {
+    u('trechosAvulsos', [...(form.trechosAvulsos || []), { ...t, id: uid() }]);
+    showToast('Trecho avulso duplicado!');
+  };
+
   // ── Hospedagens globais (sem voo/carro vinculado) ─────────────────────────
   const addHosp = () => u('hospedagens', [...form.hospedagens, novaHosp()]);
   const updHosp = (id, data) => u('hospedagens', form.hospedagens.map(h => h.id === id ? data : h));
@@ -223,11 +244,11 @@ function App() {
   const copiarResumo = () => {
     const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
     const segmentos = form.segmentos || [];
-    const totalVoos = segmentos.filter(s => s.moduloTipo !== 'carro').length;
+    const totalVoos = segmentos.filter(s => s.moduloTipo !== 'carro').length + (form.trechosAvulsos || []).length;
     const totalCarros = segmentos.filter(s => s.moduloTipo === 'carro').length;
     const hospVinculadas = segmentos.reduce((acc, s) => acc + (s.hospedagens || []).length, 0);
     const totalHosp = hospVinculadas + form.hospedagens.length;
-    const resumo = `✈️ RESUMO DA VIAGEM - GVS\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📍 Destino: ${form.destino || 'Não informado'}\n📅 Período: ${fmtDate(form.dataIda) || '—'} a ${fmtDate(form.dataVolta) || '—'}\n⏱ Duração: ${totalDias} dias\n\n📊 ESTATÍSTICAS:\n• ${totalVoos} voo(s)\n• ${totalCarros} trecho(s) terrestre(s)\n• ${totalHosp} hospedagem(ns)\n• ${form.ingressos.length} ingresso(s)\n\n👤 Passageiro(s): ${form.nomes.filter(Boolean).join(', ')}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\nEmitido por: ${form.consultor}\nData: ${new Date().toLocaleDateString('pt-BR')}`;
+    const resumo = `✈️ RESUMO DA VIAGEM - GVS\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📍 Destino: ${form.destino || 'Não informado'}\n📅 Período: ${fmtDate(form.dataIda) || '—'} a ${fmtDate(form.dataVolta) || '—'}\n⏱ Duração: ${totalDias} dias\n\n📊 ESTATÍSTICAS:\n• ${totalVoos} voo(s)${(form.trechosAvulsos || []).length > 0 ? ` (${(form.trechosAvulsos || []).length} avulso(s))` : ''}\n• ${totalCarros} trecho(s) terrestre(s)\n• ${totalHosp} hospedagem(ns)\n• ${form.ingressos.length} ingresso(s)\n\n👤 Passageiro(s): ${form.nomes.filter(Boolean).join(', ')}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\nEmitido por: ${form.consultor}\nData: ${new Date().toLocaleDateString('pt-BR')}`;
     navigator.clipboard.writeText(resumo);
     showToast('Resumo copiado!', 'success');
   };
@@ -251,8 +272,14 @@ function App() {
       return linha;
     }).join('\n\n');
 
+    // Trechos avulsos: fora da sequência principal, listados à parte
+    const avulsosMsg = (form.trechosAvulsos || []).map(t => {
+      const duracao = calcularDuracaoVoo(t.horaSaida, t.horaChegada);
+      return `✈️ *${t.tipo}* (avulso): ${t.origemCod || '???'} → ${t.destinoCod || '???'}\n   📅 ${fmtDate(t.data)} • ${t.horaSaida || '--:--'} → ${t.horaChegada || '--:--'} (${duracao})\n   🏢 ${t.cia} ${t.numVoo}`;
+    }).join('\n\n');
+
     const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
-    const msg = `✈️ *ITINERÁRIO GVS - ${form.destino || 'Destino'}* ✈️\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📅 *Período:* ${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)} (${totalDias} dias)\n👤 *Passageiro(s):* ${nomes}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\n*🧭 ITINERÁRIO*\n${segmentosMsg}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\n*Consultor:* ${form.consultor}\n*Emissão:* ${new Date().toLocaleDateString('pt-BR')}`;
+    const msg = `✈️ *ITINERÁRIO GVS - ${form.destino || 'Destino'}* ✈️\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📅 *Período:* ${fmtDate(form.dataIda)} a ${fmtDate(form.dataVolta)} (${totalDias} dias)\n👤 *Passageiro(s):* ${nomes}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━\n*🧭 ITINERÁRIO*\n${segmentosMsg}\n\n${avulsosMsg ? `━━━━━━━━━━━━━━━━━━━━━━━━━\n*✈️ TRECHOS AVULSOS*\n${avulsosMsg}\n\n` : ''}━━━━━━━━━━━━━━━━━━━━━━━━━\n*Consultor:* ${form.consultor}\n*Emissão:* ${new Date().toLocaleDateString('pt-BR')}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     showToast('Mensagem preparada para WhatsApp!', 'success');
   };
@@ -263,6 +290,7 @@ function App() {
       nomes: [''], consultor: 'Guilherme Vieira dos Santos', cargo: 'Gestor de Milhas',
       origem: '', destino: '', dataIda: '', dataVolta: '', tipos: ['Aéreos'],
       segmentos: [{ ...novoTrecho('IDA'), hospedagens: [] }],
+      trechosAvulsos: [],
       hospedagens: [], ingressos: [],
       notasGerais: notasGlobais, imagemDestino: '', logoPersonalizado: '', tema: 'light',
     };
@@ -270,9 +298,9 @@ function App() {
     showToast('Dados limpos com sucesso!', 'success');
   };
 
-  // Métricas (baseadas no array unificado de segmentos)
+  // Métricas (baseadas no array unificado de segmentos + trechos avulsos)
   const segmentos = form.segmentos || [];
-  const totalVoos = segmentos.filter(s => s.moduloTipo !== 'carro').length;
+  const totalVoos = segmentos.filter(s => s.moduloTipo !== 'carro').length + (form.trechosAvulsos || []).length;
   const totalCarros = segmentos.filter(s => s.moduloTipo === 'carro').length;
   const totalDias = calcularDuracaoViagem(form.dataIda, form.dataVolta);
   const hospVinculadas = segmentos.reduce((acc, s) => acc + (s.hospedagens || []).length, 0);
@@ -490,6 +518,37 @@ function App() {
             + Hospedagem sem voo vinculado
           </button>
 
+          {/* ══ TRECHO AVULSO — fora da timeline cronológica, sem hospedagem vinculada ══ */}
+          {(form.trechosAvulsos || []).length > 0 && (
+            <>
+              <div className="section-label" style={{ marginTop: 16 }}>Trecho Avulso</div>
+              {(form.trechosAvulsos || []).map((t, i) => (
+                <div key={t.id} className="trecho-bloco">
+                  <TrechoForm
+                    trecho={t}
+                    idx={i}
+                    onChange={data => updTrechoAvulso(t.id, data)}
+                    onRemove={() => remTrechoAvulso(t.id)}
+                    onDuplicate={() => dupTrechoAvulso(t)}
+                  />
+                </div>
+              ))}
+            </>
+          )}
+          <div style={{ fontSize: 11, color: '#888', margin: (form.trechosAvulsos || []).length > 0 ? '4px 0 8px' : '16px 0 8px', lineHeight: 1.4 }}>
+            ⚠️ Trecho avulso NÃO entra na ordem cronológica do itinerário principal (não aparece
+            intercalado com hotel/carro no PDF, nem tem as setas ▲▼) e nunca tem hospedagem vinculada.
+            Use só para voos que ficam fora da sequência da viagem (ex: voo de referência, opção
+            alternativa). Se é mais um voo da viagem em si, use "+ Voo de Ida/Volta" acima.
+          </div>
+          <button
+            className="btn-add"
+            style={{ background: '#1a1a2e', borderColor: '#3a3a6a', color: '#7a8adf' }}
+            onClick={() => addTrechoAvulso('IDA')}
+          >
+            ✈️ + Trecho sem hospedagem vinculada
+          </button>
+
           {/* INGRESSOS */}
           <div className="section-label" style={{ marginTop: 16 }}>Ingressos e Passeios</div>
           {form.ingressos.map((ing, i) => (
@@ -617,6 +676,13 @@ function App() {
                 <div className="prev-section">
                   <div className="prev-section-title">Hospedagem Avulsa</div>
                   {form.hospedagens.map(h => <PreviewHospedagem key={h.id} h={h} />)}
+                </div>
+              )}
+
+              {/* TRECHOS AVULSOS — bloco separado, fora da ordem cronológica */}
+              {(form.trechosAvulsos || []).length > 0 && (
+                <div className="prev-section">
+                  {(form.trechosAvulsos || []).map(t => <PreviewTrecho key={t.id} t={t} />)}
                 </div>
               )}
 
